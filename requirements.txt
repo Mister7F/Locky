@@ -1,0 +1,5 @@
+apsw
+Flask
+pycryptodome
+pyotp
+eel
