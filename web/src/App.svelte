@@ -1,65 +1,49 @@
 <script>
-    import Wallet from './Wallet.svelte';
-    import LockScreen from './LockScreen.svelte';
-    import { flip } from 'svelte/animate';
+    import Wallet from "./Wallet.svelte";
+    import LockScreen from "./LockScreen.svelte";
+    import { getCookie } from "./Helper.svelte";
 
     let wallet = [];
     let locked = true;
     let walletElement;
 
-    function openWallet (event) {
+    function openWallet(event) {
         locked = false;
         setTimeout(() => {
             // do after the DOM is updated
-            walletElement.openFolder(getCookie('currentFolderId') || 0);
+            walletElement.openFolder(
+                parseInt(getCookie("currentFolderId")) || 0
+            );
         });
     }
 
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-    }
-
-    async function lock () {
-        await fetch('/logout');
+    async function lock() {
+        await fetch("/logout");
         locked = true;
         wallet = [];
     }
 </script>
 
-<svelte:head>
-    <script src="/lib/qrious.min.js"></script>
-</svelte:head>
-
-<div class="root">
-    {#if locked}
-    <LockScreen on:open_wallet={openWallet}/>
-    {:else}
-    <Wallet wallet={wallet} on:lock={lock} bind:this={walletElement}/>
-    {/if}
-</div>
-
-<style lang="less">
+<style>
     @font-face {
-        font-family: 'Open Sans';
+        font-family: "Open Sans";
         font-style: normal;
         font-weight: 400;
-        src: url('/font/OpenSans-Regular.ttf');
+        src: url("/font/OpenSans-Regular.ttf");
     }
     :global(*) {
         /* Svelte MUI */
-        --color: #688c89;
-        --label: #688c89;
-        --primary: #C876E0;
-        --background: #272B34;
-        --accent:  #C876E0;
+        --color: #a8ccc9;
+        --label: #a8ccc9;
+        --primary: #c876e0;
+        --background: #272b34;
+        --accent: #c876e0;
 
         /* Other colors */
         --link-color: #1976d2;
         --error-color: #e53935;
-        --wallet-background: #FCFCFC;
-        --account-background: #FFF;
+        --wallet-background: #fcfcfc;
+        --account-background: #fff;
 
         transition-timing-function: ease;
         user-select: none;
@@ -72,8 +56,13 @@
         overflow: hidden;
     }
 
+    :global(input) {
+        /* Fix svelte-material-ui input */
+        margin: 0 !important;
+    }
+
     .root {
-        font-family: 'Open Sans';
+        font-family: "Open Sans";
         font-size: 15px;
         height: 100vh;
         width: 100vw;
@@ -82,9 +71,10 @@
         overflow-x: hidden;
     }
 
-    .wallet {
-        height: calc(100% - 3em);
+    :global(.wallet) {
+        height: calc(100% - 56px);
         overflow-y: scroll;
+        margin-top: 56px;
     }
 
     /* Scroll bar */
@@ -94,7 +84,6 @@
 
     /* Track */
     :global(::-webkit-scrollbar-track) {
-
     }
 
     /* Handle */
@@ -107,3 +96,29 @@
         background: var(--background);
     }
 </style>
+
+<svelte:head>
+    <script src="/lib/qrious.min.js">
+
+    </script>
+    <script type="text/javascript" src="/eel.js">
+
+    </script>
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,600,700" />
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Roboto+Mono" />
+</svelte:head>
+
+<div class="root">
+    {#if locked}
+        <LockScreen on:open_wallet={openWallet} />
+    {:else}
+        <Wallet {wallet} on:lock={lock} bind:this={walletElement} />
+    {/if}
+</div>

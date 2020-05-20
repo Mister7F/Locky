@@ -41,7 +41,7 @@ class Database:
                 """
             )
 
-    def _add_account(self, account):
+    def add_account(self, account):
         self._check_json_account(account)
         with self.conn:
             self.cursor.execute(
@@ -65,9 +65,9 @@ class Database:
 
             self.cursor.execute("SELECT last_insert_rowid()")
             account_id = self.cursor.fetchone()[0]
-            return self._get_account(account_id)
+            return self.get_account(account_id)
 
-    def _write_account(self, account):
+    def write_account(self, account):
         assert "id" in account
         with self.conn:
             self.cursor.execute(
@@ -100,11 +100,11 @@ class Database:
 
         return account
 
-    def _remove_account(self, account_id):
+    def remove_account(self, account_id):
         with self.conn:
             self.cursor.execute("DELETE FROM accounts WHERE id=?", [account_id])
 
-    def _search_account(self, name=""):
+    def search_account(self, name=""):
         self.cursor.execute(
             """
             SELECT id, name, login, password, icon, url,
@@ -120,7 +120,7 @@ class Database:
             self._sql_response_to_dict(response) for response in self.cursor.fetchall()
         ]
 
-    def _get_account(self, account_id=0):
+    def get_account(self, account_id=0):
         self.cursor.execute(
             """
             SELECT id, name, login, password, icon, url, totp,
@@ -133,7 +133,7 @@ class Database:
 
         return self._sql_response_to_dict(self.cursor.fetchone())
 
-    def _open_folder(self, folder_id=0):
+    def open_folder(self, folder_id=0):
         self.cursor.execute(
             """
             SELECT id, name, login, password, icon, url, totp,
@@ -149,7 +149,7 @@ class Database:
             self._sql_response_to_dict(response) for response in self.cursor.fetchall()
         ]
 
-    def _account_count(self):
+    def account_count(self):
         self.cursor.execute(
             """
             SELECT COUNT(id)
@@ -159,11 +159,11 @@ class Database:
         return self.cursor.fetchone()
 
     def check_password(self):
-        self._account_count()
+        self.account_count()
 
-    def _move_account(self, account_id, new_index):
+    def move_account(self, account_id, new_index):
         """Move an account to the specify position in his parent folder."""
-        current_folder_id = self._get_account(account_id)["folder_id"]
+        current_folder_id = self.get_account(account_id)["folder_id"]
 
         with self.conn:
             self.cursor.execute(
@@ -207,7 +207,7 @@ class Database:
                 [current_folder_id],
             )
 
-    def _move_into_folder(self, account_id, folder_id):
+    def move_into_folder(self, account_id, folder_id):
         """Move the account inside the specified folder."""
         with self.conn:
             self.cursor.execute(
@@ -232,7 +232,7 @@ class Database:
         self.conn.change_password(new_password)
         self.cursor = self.conn.cursor()
 
-    def _clean_accounts(self):
+    def clean_accounts(self):
         """Clean the database.
 
         Do multiple actions
@@ -291,22 +291,23 @@ class Database:
 
 if __name__ == "__main__":
     import random
+
     os.system("rm _test_sqlcrypt_")
 
     database = Database("test", "_test_sqlcrypt_")
     for i in range(5):
-        database._add_account({"name": str(i)})
-    database._move_account(3, 1)
+        database.add_account({"name": str(i)})
+    database.move_account(3, 1)
 
     # test moving accounts
-    current_order = [account["id"] for account in database._open_folder(0)]
+    current_order = [account["id"] for account in database.open_folder(0)]
 
-    database._move_account(3, 1)
+    database.move_account(3, 1)
 
     # check if order is stable
     for _ in range(100):
-        database._move_account(3, 1)
-        assert current_order == [account["id"] for account in database._open_folder(0)]
+        database.move_account(3, 1)
+        assert current_order == [account["id"] for account in database.open_folder(0)]
 
     # python implementation of the accounts move
     # to check the SQL query
@@ -317,29 +318,29 @@ if __name__ == "__main__":
     for _ in range(100):
         moved_account_id = random.choice(current_order)
         new_index = random.randint(0, len(current_order))
-        database._move_account(moved_account_id, new_index)
+        database.move_account(moved_account_id, new_index)
         move_account(moved_account_id, new_index)
 
-        assert current_order == [account["id"] for account in database._open_folder(0)]
+        assert current_order == [account["id"] for account in database.open_folder(0)]
 
     # test moving into a folder
-    folder = database._add_account({"folder": 1})
-    account = database._add_account({})
+    folder = database.add_account({"folder": 1})
+    account = database.add_account({})
 
     for _ in range(5):
-        database._add_account({"folder": 0, "folder_id": folder["id"]})
+        database.add_account({"folder": 0, "folder_id": folder["id"]})
 
-    database._move_into_folder(account["id"], folder["id"])
+    database.move_into_folder(account["id"], folder["id"])
 
-    account = database._get_account(account["id"])
+    account = database.get_account(account["id"])
 
     assert account["folder_id"] == folder["id"]
     assert account["sequence"] == 5
 
     # change password test
-    database._change_password('new password !')
+    database.change_password("test", "new password !")
 
-    account = database._get_account(account["id"])
+    account = database.get_account(account["id"])
     assert account["folder_id"] == folder["id"]
     assert account["sequence"] == 5
 

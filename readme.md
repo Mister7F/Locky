@@ -19,8 +19,11 @@ Then, you can start the application with,
 # Dev
 First, install `npm` and `python`
 
+Then,
+> `cd web && npm install`
+
 Install the npm dependency
-> `npm install --save-dev svelte-mui`
+> `npm install --save-dev svelte-material-ui node-sass sass-loader rollup-plugin-postcss`
 
 Then, install the python dependencies,
 > `pip install -r requirements.txt`
@@ -31,8 +34,15 @@ Then, run
 And start the python application in dev mode
 > `python main.py dev`
 
+Use `black` to prettify the python code
+
+Use `prettier` to format the svelte file
+> `npm i --save-dev prettier-plugin-svelte prettier`
+
+> `cd web && prettier --write --tab-width=4 --plugin-search-dir=. ./src/*.svelte ./src/*/*.svelte`
+
 # Technologies
-Python has been used for the backend with `Flask` and `Svelte` for the frontend (with `svelte-mui` for the components).
+Python has been used for the backend with `Flask` and `Svelte` for the frontend (with `svelte-material-ui` for the components).
 
 The accounts are stored in a SQLite encrypted database
 - AES 256 bits
@@ -42,17 +52,13 @@ The accounts are stored in a SQLite encrypted database
 # Todo
 - UI
     - account editor
-        - scroll to bottom if add a new field
         - save & close on press enter
-    - auto logout if loose session *should work now, to test*
     - test on mobile (phone & tablet)
-    - use prettier on svelte files (make it work for svelte)
     - create initial wallet
 - Backend
     - G-Drive sync
     - `database.py`, optimize `move_account` to drop the column `sequence_tmp`
     - use only account ID when possible
-    - `databse.py` make method public
     - clean database function
     - error on component (shake them)
 - Security

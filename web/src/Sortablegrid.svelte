@@ -1,6 +1,6 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
-    import { onMount } from 'svelte';
+    import { createEventDispatcher } from "svelte";
+    import { onMount } from "svelte";
 
     export let items;
     export let dragging = false;
@@ -14,13 +14,11 @@
         return [].indexOf.call(element.parentNode.children, element);
     }
 
-    function resetGrid () {
+    function resetGrid() {
         // trigger change event if there's no change
-        // to reset the list
-        let i = items;
-        items = [];
+        // to reset the list (with a deep copy)
         setTimeout(() => {
-            items = i;
+            items = JSON.parse(JSON.stringify(items));
         });
     }
 
@@ -38,7 +36,9 @@
 
     let mouseTimer = null;
 
-    function mouseDown (event) {
+    let mobile = false;
+
+    function mouseDown(event) {
         if (event.button !== 0 && !event.touches) {
             return;
         }
@@ -54,31 +54,39 @@
                 // mobile
                 xPosElement = draggedElement.offsetWidth / 2;
                 yPosElement = draggedElement.offsetHeight / 2;
+                mobile = true;
             } else {
                 // desktop
                 xPosElement = event.x - draggedElement.offsetLeft;
                 yPosElement = event.y - draggedElement.offsetTop;
+                mobile = false;
             }
 
             // move the element in absolute position
             let x = draggedElement.offsetLeft;
-            let y = draggedElement.offsetTop;
-            draggedElement.classList.add('dragged');
-            draggedElement.style.setProperty('--x', x + 'px');
-            draggedElement.style.setProperty('--y', y + 'px');
+            let y =
+                draggedElement.offsetTop -
+                document.querySelector(".grid").scrollTop;
+
+            draggedElement.classList.add("dragged");
+            draggedElement.style.setProperty("--x", x + "px");
+            draggedElement.style.setProperty("--y", y + "px");
 
             // create a ghost element to fill the space
-            ghostElement = document.createElement('div');
-            ghostElement.style.width = draggedElement.offsetWidth + 'px';
-            ghostElement.style.height = draggedElement.offsetHeight + 'px';
-            ghostElement.setAttribute('class', 'ghost');
-            draggedElement.parentNode.insertBefore(ghostElement, draggedElement);
+            ghostElement = document.createElement("div");
+            ghostElement.style.width = draggedElement.offsetWidth + "px";
+            ghostElement.style.height = draggedElement.offsetHeight + "px";
+            ghostElement.setAttribute("class", "ghost");
+            draggedElement.parentNode.insertBefore(
+                ghostElement,
+                draggedElement
+            );
 
             document.body.appendChild(draggedElement);
         }, 100);
     }
 
-    function mouseUp (event) {
+    function mouseUp(event) {
         if (mouseTimer) {
             clearTimeout(mouseTimer);
         }
@@ -89,46 +97,56 @@
         let draggedItem = items[draggedIndex];
 
         if (action) {
-            dispatch('action', {
+            dispatch("action", {
                 action: action,
                 item: draggedItem,
             });
-        } else if (draggedIndex !== destIndex && destIndex >= 0 && draggedIndex >= 0) {
+        } else if (
+            draggedIndex !== destIndex &&
+            destIndex >= 0 &&
+            draggedIndex >= 0
+        ) {
             let destItem = items[destIndex];
 
             if (!intoFolder) {
                 let item = items.splice(draggedIndex, 1)[0];
                 items.splice(destIndex, 0, item);
+                ghostElement.parentNode.insertBefore(
+                    draggedElement,
+                    ghostElement
+                );
             } else {
                 items.splice(draggedIndex, 1);
             }
 
-            dispatch('move', {
+            dispatch("move", {
                 from: draggedIndex,
                 to: destIndex,
                 fromItem: draggedItem,
                 intoFolder: intoFolder,
                 destItem: destItem,
             });
+        } else {
+            ghostElement.parentNode.insertBefore(draggedElement, ghostElement);
         }
 
         // clean the state
         ghostElement.remove();
-        draggedElement.classList.remove('dragged');
+        draggedElement.classList.remove("dragged");
         draggedElement = null;
-        draggedIndex = -1
+        draggedIndex = -1;
         destIndex = -1;
         dragging = false;
         action = null;
         intoFolder = false;
-        let previousFolder = document.querySelector('.move_into');
+        let previousFolder = document.querySelector(".move_into");
         if (previousFolder) {
-            previousFolder.classList.remove('move_into');
+            previousFolder.classList.remove("move_into");
         }
         resetGrid();
     }
 
-    function mouseMove (event) {
+    function mouseMove(event) {
         if (!draggedElement) {
             return;
         }
@@ -138,20 +156,34 @@
             // mobile
             var mouseX = event.touches[0].clientX;
             var mouseY = event.touches[0].clientY;
-        } else {
+            var offsetY = 0;
+        } else if (!mobile) {
             // desktop
             var mouseX = event.x;
             var mouseY = event.y;
+            var offsetY = document.querySelector(".grid").scrollTop;
+        } else {
+            // mouse move event on mobile
+            // must ignore
+            return;
         }
 
-        draggedElement.style.setProperty('--x', (mouseX - xPosElement) + 'px');
-        draggedElement.style.setProperty('--y', (mouseY - yPosElement) + 'px');
+        draggedElement.style.setProperty("--x", mouseX - xPosElement + "px");
+        draggedElement.style.setProperty(
+            "--y",
+            mouseY - yPosElement - offsetY + "px"
+        );
 
         // move the ghost element if necessary
         let hoverElements = document.elementsFromPoint(mouseX, mouseY);
 
         // check if will perform an action
-        let actionElement = hoverElements.filter(el => el.parentNode && el.parentNode.getAttribute && el.parentNode.getAttribute('slot') === 'actions');
+        let actionElement = hoverElements.filter(
+            (el) =>
+                el.parentNode &&
+                el.parentNode.getAttribute &&
+                el.parentNode.getAttribute("slot") === "actions"
+        );
 
         if (actionElement.length) {
             action = actionElement[0];
@@ -159,65 +191,57 @@
         }
 
         // check if will move the item
-        let destItemsFiltered = hoverElements.filter(el => el.classList.contains('container'));
-        destItemsFiltered = destItemsFiltered.filter(el => el !== draggedElement);
+        let destItemsFiltered = hoverElements.filter((el) =>
+            el.classList.contains("container")
+        );
+        destItemsFiltered = destItemsFiltered.filter(
+            (el) => el !== draggedElement
+        );
 
         if (destItemsFiltered.length) {
             let destelement = destItemsFiltered[0];
             destIndex = getElementIndex(destelement);
 
-            intoFolder = parseInt(destelement.getAttribute('folder'));
+            intoFolder = parseInt(destelement.getAttribute("folder"));
 
             if (intoFolder) {
-                destelement.classList.add('move_into');
+                destelement.classList.add("move_into");
             } else {
-                let previousFolder = document.querySelector('.move_into');
+                let previousFolder = document.querySelector(".move_into");
                 if (previousFolder) {
-                    previousFolder.classList.remove('move_into');
+                    previousFolder.classList.remove("move_into");
                 }
 
                 let ghostIndex = getElementIndex(ghostElement);
                 if (ghostIndex < destIndex) {
-                    destelement.parentNode.insertBefore(ghostElement, destelement.nextSibling);
+                    destelement.parentNode.insertBefore(
+                        ghostElement,
+                        destelement.nextSibling
+                    );
                 } else {
-                    destelement.parentNode.insertBefore(ghostElement, destelement);
+                    destelement.parentNode.insertBefore(
+                        ghostElement,
+                        destelement
+                    );
                 }
             }
         } else {
             intoFolder = false;
             destIndex = getElementIndex(ghostElement);
-            let previousFolder = document.querySelector('.move_into');
+            let previousFolder = document.querySelector(".move_into");
             if (previousFolder) {
-                previousFolder.classList.remove('move_into');
+                previousFolder.classList.remove("move_into");
             }
         }
-
     }
 
-    window.addEventListener('mouseup', mouseUp);
-    window.addEventListener('touchend', mouseUp);
+    window.addEventListener("mouseup", mouseUp);
+    window.addEventListener("touchend", mouseUp);
 
-    window.addEventListener('mousemove', mouseMove);
-    window.addEventListener('touchmove', mouseMove);
-
+    window.addEventListener("mousemove", mouseMove);
+    window.addEventListener("touchmove", mouseMove);
 </script>
 
-<div class="grid">
-    <div class="actions" bind:this={actionsSlot}>
-        <slot name="actions">
-            <!-- Actions when items are dropped on the elements -->
-        </slot>
-    </div>
-    <div class="items">
-        {#each items as item, index (item)}
-        <div class="container" folder={item.folder || 0}
-             on:mousedown={mouseDown}
-             on:touchstart={mouseDown}>
-            <slot name="item" class="item" {item} {index}/>
-        </div>
-        {/each}
-    </div>
-</div>
 <style>
     .grid {
         overflow-x: hidden;
@@ -261,5 +285,23 @@
     :global(.move_into) {
         -webkit-filter: brightness(50%);
     }
-
 </style>
+
+<div class="grid" oncontextmenu="return false;">
+    <div class="actions" bind:this={actionsSlot}>
+        <slot name="actions">
+            <!-- Actions when items are dropped on the elements -->
+        </slot>
+    </div>
+    <div class="items">
+        {#each items as item, index (item)}
+            <div
+                class="container"
+                folder={item.folder || 0}
+                on:mousedown={mouseDown}
+                on:touchstart={mouseDown}>
+                <slot name="item" class="item" {item} {index} />
+            </div>
+        {/each}
+    </div>
+</div>

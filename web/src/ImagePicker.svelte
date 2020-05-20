@@ -1,7 +1,7 @@
 <script>
-    import { Textfield } from 'svelte-mui';
-    import Include from './Include.svelte';
-    import { onMount } from 'svelte';
+    import Textfield from "@smui/textfield";
+    import Include from "./Include.svelte";
+    import { onMount } from "svelte";
 
     export let src;
     export let chooseIcon = false;
@@ -9,58 +9,33 @@
     export let size = "100px";
 
     let srcs = [];
-    let currentSrcs = [];
-    let searchValue = '';
+    $: currentSrcs =
+        !searchValue || !searchValue.length
+            ? srcs
+            : srcs.filter((url) => {
+                  return (
+                      url.toLowerCase().indexOf(searchValue.toLowerCase()) > 0
+                  );
+              });
+    let searchValue = "";
 
     onMount(async () => {
-        let response = await fetch('/account_icons');
+        let response = await fetch("/account_icons");
         srcs = await response.json();
         currentSrcs = srcs;
     });
 
-    function open () {
+    function open() {
         chooseIcon = readonly ? false : true;
     }
 
-    function choose (isrc) {
-        search();
-        searchValue = '';
+    function choose(isrc) {
+        searchValue = "";
 
         src = isrc;
         chooseIcon = false;
     }
-
-    function search(event) {
-        if (!event || !searchValue.length) {
-            currentSrcs = srcs;
-        } else {
-            currentSrcs = srcs.filter((url) => {
-                return url.indexOf(searchValue) > 0;
-            });
-        }
-    }
-
 </script>
-
-<div class="image_picker" style="--size: {size}">
-    <div class={readonly ? 'img readonly' : 'img'} on:click={open}>
-        {#if src}
-            <img src={src} alt={src}/>
-        {:else}
-            <Include src='/img/account_default.svg'/>
-        {/if}
-    </div>
-    <div class="icons {chooseIcon && !readonly ? 'visible' : ''}">
-        <div class="search">
-            <Textfield placeholder="Search" width="100%" on:input={search} bind:value={searchValue}/>
-        </div>
-        <div class="container">
-            {#each currentSrcs as src}
-                <img src={src} on:click={() => {choose(src)}} alt={src}/>
-            {/each}
-        </div>
-    </div>
-</div>
 
 <style>
     .image_picker {
@@ -80,7 +55,7 @@
     img {
         max-width: 100%;
         max-height: 100%;
-        height: var(--size);;
+        height: var(--size);
         margin: auto;
     }
 
@@ -140,3 +115,28 @@
         height: 60px;
     }
 </style>
+
+<div class="image_picker" style="--size: {size}">
+    <div class={readonly ? 'img readonly' : 'img'} on:click={open}>
+        {#if src}
+            <img {src} alt={src} />
+        {:else}
+            <Include src="/img/account_default.svg" />
+        {/if}
+    </div>
+    <div class="icons {chooseIcon && !readonly ? 'visible' : ''}">
+        <div class="search">
+            <Textfield label="Search" bind:value={searchValue} />
+        </div>
+        <div class="container">
+            {#each currentSrcs as src}
+                <img
+                    {src}
+                    on:click={() => {
+                        choose(src);
+                    }}
+                    alt={src} />
+            {/each}
+        </div>
+    </div>
+</div>

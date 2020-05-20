@@ -9,14 +9,21 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "11.0.2",
     "@rollup/plugin-node-resolve": "^7.0.0",
+    "node-sass": "^4.14.1",
+    "prettier": "^2.0.5",
+    "prettier-plugin-svelte": "^1.1.0",
     "rollup": "^1.20.0",
     "rollup-plugin-livereload": "^1.0.0",
+    "rollup-plugin-postcss": "^3.1.1",
     "rollup-plugin-svelte": "^5.0.3",
     "rollup-plugin-terser": "^5.1.2",
-    "svelte": "^3.0.0"
+    "sass-loader": "^8.0.2",
+    "svelte": "^3.22.3",
+    "svelte-material-ui": "^1.0.0-beta.21"
   },
   "dependencies": {
     "qrious": "^4.0.2",
-    "sirv-cli": "^0.4.4"
+    "sirv-cli": "^0.4.4",
+    "svelte-preprocess": "^3.7.4"
   }
 }

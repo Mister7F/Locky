@@ -96,9 +96,9 @@ def save_account():
         raise Error("Invalid request")
 
     if "id" not in account:
-        account = database_connections[session["login"]]._add_account(account)
+        account = database_connections[session["login"]].add_account(account)
     else:
-        account = database_connections[session["login"]]._write_account(account)
+        account = database_connections[session["login"]].write_account(account)
 
     return json.dumps(account)
 
@@ -110,7 +110,7 @@ def remove_account():
     if not session.get("login") or not account or "id" not in account:
         raise Error("Invalid request")
 
-    database_connections[session["login"]]._remove_account(account["id"])
+    database_connections[session["login"]].remove_account(account["id"])
 
     return "ok"
 
@@ -126,9 +126,9 @@ def move_account():
     dest_account_id = request.json.get("dest_account_id")
 
     if not into_folder:
-        database_connections[session["login"]]._move_account(account_id, new_index)
+        database_connections[session["login"]].move_account(account_id, new_index)
     else:
-        database_connections[session["login"]]._move_into_folder(
+        database_connections[session["login"]].move_into_folder(
             account_id, dest_account_id
         )
 
@@ -143,9 +143,9 @@ def move_up():
     account_id = int(request.json.get("account_id"))
 
     database = database_connections[session["login"]]
-    account = database._get_account(account_id)
-    folder = database._get_account(account["folder_id"])
-    database._move_into_folder(account_id, folder.get("folder_id", 0))
+    account = database.get_account(account_id)
+    folder = database.get_account(account["folder_id"])
+    database.move_into_folder(account_id, folder.get("folder_id", 0))
 
     return "ok"
 
@@ -157,7 +157,7 @@ def open_folder():
 
     folder_id = int(request.args.get("id", 0))
 
-    return json.dumps(database_connections[session["login"]]._open_folder(folder_id))
+    return json.dumps(database_connections[session["login"]].open_folder(folder_id))
 
 
 @app.route("/account/<int:account_id>", methods=["GET"])
@@ -165,7 +165,7 @@ def account(account_id):
     if not session.get("login"):
         raise Error("Invalid request")
 
-    return json.dumps(database_connections[session["login"]]._get_account(account_id))
+    return json.dumps(database_connections[session["login"]].get_account(account_id))
 
 
 @app.route("/search", methods=["GET"])
@@ -174,7 +174,7 @@ def search():
     if not session.get("login"):
         raise Error("Invalid request")
 
-    return json.dumps(database_connections[session["login"]]._search_account(search))
+    return json.dumps(database_connections[session["login"]].search_account(search))
 
 
 @app.route("/change_password", methods=["POST"])
@@ -212,7 +212,8 @@ if __name__ == "__main__":
     if debug:
         # disable cache for dev purpose
         app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
-
-    # `allowed_extensions` is empty because we do not use `eel.expose`
-    eel.init("web", allowed_extensions=[])
-    eel.start("", port=5002, app=app, size=(500, 700), host="0.0.0.0")
+        app.run(debug=True, host="0.0.0.0", port=5002)
+    else:
+        # `allowed_extensions` is empty because we do not use `eel.expose`
+        eel.init("web", allowed_extensions=[])
+        eel.start("", port=5002, app=app, size=(500, 700), host="0.0.0.0")

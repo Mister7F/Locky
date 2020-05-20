@@ -1,0 +1,13 @@
+<svg width="27" height="27" xmlns="http://www.w3.org/2000/svg">
+
+ <g>
+  <title>background</title>
+  <rect fill="none" id="canvas_background" height="29" width="29" y="-1" x="-1"/>
+ </g>
+ <g>
+  <title>Layer 1</title>
+  <path stroke="null" id="Dialog" fill="#6441A5" d="m18.404868,22.568712l-4.9,0l-2.4,3.2l-3.2,0l0,-3.2l-5.7,0l0,-16.9l1.6,-4.2l21.1,0l0,14.6l-6.5,6.5zm4,-7.3l0,-11.3l-17,0l0,15.4l4.9,0l0,3.2l3.2,-3.2l4.9,0l4,-4.1z"/>
+  <rect y="7.968712" x="15.904868" width="2.4" id="_x7C_" height="6.5" fill="#6441A5"/>
+  <rect y="7.968712" x="11.104868" width="2.4" id="_x7C__2_" height="6.5" fill="#6441A5"/>
+ </g>
+</svg>

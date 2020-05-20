@@ -1,0 +1,48 @@
+
+
+$mdc-theme-primary: #C876E0; // baseline purple, 500 tone
+$mdc-theme-on-primary: #a8ccc9;
+
+$mdc-theme-accent: #018786;
+$mdc-theme-secondary: #272B34;
+$mdc-theme-on-secondary: #272B34;
+$mdc-theme-background: #272B34;
+
+$mdc-theme-surface: #272B34;
+$mdc-theme-on-surface: #a8ccc9;
+
+$mdc-theme-error: #e53935;
+$mdc-theme-on-error: #e53935;
+
+/* Fix the components */
+button:not(:disabled):active {
+    background-color: $mdc-theme-background;
+}
+
+.material-icons {
+    color: $mdc-theme-on-primary!important;
+}
+
+.mdc-menu-surface--open,
+.mdc-select__menu {
+    z-index: 99999;
+}
+
+.mdc-list svg {
+    fill: $mdc-theme-on-primary;
+}
+
+.mdc-dialog__surface {
+    max-width: 90%!important;
+}
+.mdc-top-app-bar {
+    height: 56px;
+}
+
+.mdc-text-field .mdc-floating-label {
+    top: 30px;
+}
+
+.mdc-text-field .mdc-floating-label--float-above {
+    transform: translateY(-20px) scale(0.75);
+}
