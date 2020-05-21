@@ -197,12 +197,18 @@ def totp():
     if not session.get("login"):
         raise Error("Invalid request")
 
-    code = request.args.get("code", "")
-    code = "".join([c for c in code if c != " "])
+    base32_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    assert len(base32_charset) == 32
+
+    code = request.args.get("code", "").upper()
+    code = "".join([c for c in code if c in base32_charset])
     if not code:
         return ""
 
-    totp = pyotp.TOTP(code).now()
+    try:
+        totp = pyotp.TOTP(code).now()
+    except Exception:
+        return ""
 
     return totp[:3] + " " + totp[3:]
 
