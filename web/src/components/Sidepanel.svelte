@@ -17,7 +17,7 @@
         top: 0;
         z-index: 40;
         overflow: hidden;
-        width: 350px;
+        width: 400px;
         max-width: 100%;
         height: 100%;
         background-color: var(--background);

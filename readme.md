@@ -41,6 +41,28 @@ Use `prettier` to format the svelte file
 
 > `cd web && prettier --write --tab-width=4 --plugin-search-dir=. ./src/*.svelte ./src/*/*.svelte`
 
+# Mobile
+Want to use the application on mobile ?
+
+Go on your browser, navigate to your Locky instance, and send the application to the home screen.
+
+https://www.howtogeek.com/196087/how-to-add-websites-to-the-home-screen-on-any-smartphone-or-tablet/
+
+# HTTPS
+If you want to access to the application remotely, you might want to use HTTPS (and you really should).
+
+You can generate a certificate
+> `openssl req -x509 -nodes -days 730 -newkey rsa:2048 -keyout server.key -out server.crt -sha256`
+
+Then, start the server with the SSL certificate
+> `python main.py --cert=./certificate/server.crt --key=./certificate/server.key`
+
+And register the certificate on your device (to prevent MITM, do not accept unknown certificates)
+
+Android,
+> `Settings -> Password & Security -> Privacy -> Encryption & credentials -> Install the certificate (.cert) from your SD card`
+
+
 # Technologies
 Python has been used for the backend with `Flask` and `Svelte` for the frontend (with `svelte-material-ui` for the components).
 
@@ -55,12 +77,15 @@ The accounts are stored in a SQLite encrypted database
         - save & close on press enter
     - test on mobile (phone & tablet)
     - create initial wallet
+    - reverse navigation
+    - show copy notification in the account editor
 - Backend
     - G-Drive sync
     - `database.py`, optimize `move_account` to drop the column `sequence_tmp`
     - use only account ID when possible
     - clean database function
     - error on component (shake them)
+    - close the process when the window is closed
 - Security
     - Check route login
     - Check route path (home & base routes)

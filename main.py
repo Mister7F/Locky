@@ -214,12 +214,22 @@ def totp():
 
 
 if __name__ == "__main__":
+    cert = None
+    key = None
     debug = "dev" in sys.argv
-    if debug:
+    for arg in sys.argv:
+        if arg.startswith('--cert'):
+            cert = arg.split('=')[1]
+        if arg.startswith('--key'):
+            key = arg.split('=')[1]
+
+    if cert and key:
+        app.run(debug=False, host="0.0.0.0", port=5002, ssl_context=(cert, key))
+    elif debug:
         # disable cache for dev purpose
         app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
         app.run(debug=True, host="0.0.0.0", port=5002)
     else:
         # `allowed_extensions` is empty because we do not use `eel.expose`
         eel.init("web", allowed_extensions=[])
-        eel.start("", port=5002, app=app, size=(500, 700), host="0.0.0.0")
+        eel.start("", port=5002, app=app, size=(500, 700), host="127.0.0.1")

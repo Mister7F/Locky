@@ -2,7 +2,7 @@
     import Button, { Icon } from "@smui/button";
     import Dialog, { Title, Content, Actions } from "@smui/dialog";
 
-    import Field from "./Field.svelte";
+    import Field from "./components/Field.svelte";
 
     let oldPassword = "";
     let newPassword = "";
@@ -52,12 +52,15 @@
         text-align: center;
     }
 
-    :global(.change_password_icon) {
-        margin-left: 10px !important;
+    :global(.change_password_dialog .mdc-dialog__surface),
+    :global(.change_password_dialog .mdc-dialog__title) {
+        color: var(--on-primary);
+        background-color: var(--primary);
     }
+
 </style>
 
-<Dialog width="290" bind:this={dialog}>
+<Dialog width="290" bind:this={dialog} class="change_password_dialog">
     <Title>New password</Title>
     <br />
     <Content>
@@ -78,9 +81,11 @@
             copy="0" />
 
         <div class="action">
-            <Button color="primary" raised on:click={changePassword}>
-                Change
-            </Button>
+            {#if canSubmit}
+                <Button color="secondary" raised on:click={changePassword}>
+                    Change
+                </Button>
+            {/if}
         </div>
         {#if error}
             <div class="error">Wrong password !</div>

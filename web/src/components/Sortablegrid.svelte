@@ -58,7 +58,7 @@
             } else {
                 // desktop
                 xPosElement = event.x - draggedElement.offsetLeft;
-                yPosElement = event.y - draggedElement.offsetTop;
+                yPosElement = event.y - draggedElement.offsetTop + document.querySelector(".grid").scrollTop;
                 mobile = false;
             }
 
@@ -83,7 +83,8 @@
             );
 
             document.body.appendChild(draggedElement);
-        }, 100);
+
+        }, 150);
     }
 
     function mouseUp(event) {
@@ -147,6 +148,9 @@
     }
 
     function mouseMove(event) {
+        if (mouseTimer) {
+            clearTimeout(mouseTimer);
+        }
         if (!draggedElement) {
             return;
         }
@@ -156,12 +160,10 @@
             // mobile
             var mouseX = event.touches[0].clientX;
             var mouseY = event.touches[0].clientY;
-            var offsetY = 0;
         } else if (!mobile) {
             // desktop
             var mouseX = event.x;
             var mouseY = event.y;
-            var offsetY = document.querySelector(".grid").scrollTop;
         } else {
             // mouse move event on mobile
             // must ignore
@@ -169,10 +171,7 @@
         }
 
         draggedElement.style.setProperty("--x", mouseX - xPosElement + "px");
-        draggedElement.style.setProperty(
-            "--y",
-            mouseY - yPosElement - offsetY + "px"
-        );
+        draggedElement.style.setProperty("--y", mouseY - yPosElement + "px");
 
         // move the ghost element if necessary
         let hoverElements = document.elementsFromPoint(mouseX, mouseY);
@@ -247,6 +246,8 @@
         overflow-x: hidden;
         overflow-y: auto;
         max-height: 100%;
+        background: transparent;
+
     }
 
     .items {
@@ -276,6 +277,14 @@
         top: var(--y);
         opacity: 0.2;
         transform: rotate(-3deg);
+    }
+
+    :global(.dragged),
+    :global(.dragged) *,
+    :global(.dragged) div {
+        cursor: grabbing!important;
+        cursor: -moz-grabbing!important;
+        cursor: -webkit-grabbing!important;
     }
 
     :global(.ghost) {

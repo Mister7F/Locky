@@ -1,6 +1,4 @@
 <script>
-    import Sidepanel from "./components/Sidepanel.svelte";
-
     import Snackbar, { Actions } from "@smui/snackbar";
     import IconButton from "@smui/icon-button";
     import Fab, { Label, Icon } from "@smui/fab";
@@ -8,7 +6,8 @@
     import Account from "./Account.svelte";
     import AccountEditor from "./AccountEditor.svelte";
     import Navbar from "./Navbar.svelte";
-    import Sortablegrid from "./Sortablegrid.svelte";
+    import Sortablegrid from "./components/Sortablegrid.svelte";
+    import Sidepanel from "./components/Sidepanel.svelte";
     import { getCookie } from "./Helper.svelte";
 
     import { createEventDispatcher } from "svelte";
@@ -205,11 +204,20 @@
         snackbarText = event.detail;
         snackbar.open(snackbarText);
     }
+
+    /* ** DEBUG ** */
+    import { onMount, onDestroy, getContext } from "svelte";
+    onMount(() => {
+        setTimeout(() => {
+            // editAccount(wallet[0])
+        }, 200);
+    });
 </script>
 
 <style>
     .wallet {
         height: calc(100vh - 50px);
+        padding-top: 20px;
         background-color: var(--wallet-background);
     }
     .actions {
@@ -235,10 +243,10 @@
     }
 
     :global(.new_account) {
-        position: absolute !important;
+        position: absolute;
         bottom: -65px;
         right: -65px;
-        transition: 0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8);
+        transition: all 0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8);
     }
 
     :global(.new_account).visible {
@@ -246,15 +254,16 @@
         right: 20px;
     }
 
-    :global(.side-panel) {
-        width: 350px !important;
-        --bg-color: var(--background) !important;
+    :global(.new_account:active) {
+        transform: rotate(-90deg);
     }
+
 </style>
 
 <Sidepanel bind:visible={menuVisible}>
     <AccountEditor
         bind:this={accountEditor}
+        on:close={() => menuVisible = false}
         on:save_account={saveAccount}
         on:remove_account={removeAccount} />
 </Sidepanel>

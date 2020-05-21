@@ -1,6 +1,5 @@
 <script>
-    import Button, { Label } from "@smui/button";
-    import Field from "./Field.svelte";
+    import Field from "./components/Field.svelte";
     import { createEventDispatcher } from "svelte";
     const dispatch = createEventDispatcher();
 
@@ -13,7 +12,7 @@
         ? 0
         : ((100 - 33) * (maxLen - Math.min(password.length, maxLen))) / maxLen +
           33;
-    $: fillColor = wrongPassword ? "var(--error-color)" : "var(--accent)";
+    $: fillColor = wrongPassword ? "var(--error-color)" : "var(--secondary)";
 
     async function checkPassword() {
         let response = await fetch("/login", {
@@ -58,7 +57,7 @@
         position: absolute;
         width: 100%;
         height: 100%;
-        background-color: var(--background);
+        background-color: var(--primary);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -77,7 +76,7 @@
     }
 
     svg path {
-        stroke: var(--color);
+        stroke: var(--on-primary);
         stroke-width: 0.2px;
         stroke-dasharray: 100px;
         stroke-dashoffset: 0;
@@ -136,6 +135,7 @@
         label="Password"
         bind:value={password}
         on:enter={onEnter}
+        on:input={() => (wrongPassword = false)}
         type="password"
         copy="0" />
 </div>

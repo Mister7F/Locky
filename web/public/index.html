@@ -6,11 +6,29 @@
 
 	<title>Locky</title>
 
-	<link rel='icon' type='image/png' href='/favicon.png'>
+    <link rel="icon" href="/img/favicon/favicon.ico">
+    <link rel="icon" type="image/png" href="/img/favicon/16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="/img/favicon/32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/img/favicon/64.png" sizes="64x64">
+
+
 	<link rel='stylesheet' href='/global.css'>
 	<link rel='stylesheet' href='/build/bundle.css'>
 
-	<script defer src='/build/bundle.js'></script>
+    <script defer src='/build/bundle.js'></script>
+
+    <!-- Mobile zone -->
+    <!-- Color of the header on mobile (android, windows phone & safari) -->
+    <meta name="theme-color" content="#344955" />
+    <meta name="msapplication-navbutton-color" content="#344955">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#344955">
+
+    <!-- Allow to send the application to the home screen on mobile -->
+    <!-- https://developer.mozilla.org/fr/docs/Web/Manifest -->
+    <link rel="manifest" href="/mobile-manifest.json">
+     <!-- End mobile zone -->
+
 </head>
 
 <body>

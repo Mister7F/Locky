@@ -1,18 +1,11 @@
 <script>
     import Textfield from "@smui/textfield";
-    import List, {
-        Item,
-        Separator,
-        Text,
-        PrimaryText,
-        SecondaryText,
-        Graphic,
-    } from "@smui/list";
+    import List, { Item } from "@smui/list";
     import HelperText from "@smui/textfield/helper-text/index";
     import Menu, { SelectionGroup, SelectionGroupIcon } from "@smui/menu";
-    import IconButton, { Icon } from "@smui/icon-button";
+    import IconButton from "@smui/icon-button";
 
-    import { copyValue } from "./Helper.svelte";
+    import Icon from "./Icon.svelte";
 
     import { createEventDispatcher } from "svelte";
 
@@ -24,6 +17,8 @@
     export let value = "";
     export let message = null;
     export let copy = 1;
+    let className = "";
+    export { className as class };
 
     export let canEditType = false;
 
@@ -31,6 +26,7 @@
     export let passwordVisible = false;
 
     let openMenu = false;
+    let textField;
 
     $: computedType = passwordVisible ? "text" : type;
     $: computedMessage =
@@ -43,8 +39,14 @@
     function onKeyPress(e) {
         if (!e) e = window.event;
         if ((e.keyCode || e.which) == 13) {
-            dispatch('enter');
+            dispatch("enter");
             return false;
+        }
+    }
+
+    export function focus() {
+        if (textField) {
+            textField.focus();
         }
     }
 </script>
@@ -52,9 +54,10 @@
 <style>
     .field {
         height: 72px;
+        max-height: 100%;
         width: auto;
         text-align: left;
-        max-width: 300px;
+        max-width: 350px;
     }
 
     .content {
@@ -65,6 +68,14 @@
         width: 100%;
         height: 50px;
         box-sizing: border-box;
+    }
+
+    .text-field-container {
+        width: 100%;
+    }
+
+    .text-field-container :global(.text-field) {
+        width: 100%;
     }
 
     .label {
@@ -83,8 +94,11 @@
         letter-spacing: 0.4px;
     }
 
-    a:hover {
+    a {
         color: var(--link-color);
+    }
+
+    a:hover {
         text-decoration: underline;
     }
 
@@ -96,10 +110,35 @@
         z-index: 999999;
         box-sizing: border-box;
     }
+
+    /* Set colors */
+    .field {
+        color: var(--on-primary);
+    }
+    .field :global(input),
+    .field :global(.mdc-text-field-helper-text),
+    .field :global(.mdc-floating-label) {
+        color: var(--on-primary) !important;
+    }
+
+    .field :global(.mdc-text-field--focused input) {
+        caret-color: var(--secondary) !important;
+    }
+    .field :global(.mdc-text-field--focused .mdc-floating-label) {
+        color: var(--secondary) !important;
+    }
+
+    .field :global(.mdc-text-field__input) {
+        border-bottom-color: var(--on-primary) !important;
+    }
+
+    .field :global(.mdc-line-ripple) {
+        background-color: var(--secondary) !important;
+    }
 </style>
 
 {#if value || !readonly}
-    <div class="field">
+    <div class="field {className}">
         {#if readonly}
             <div class="label">{label}</div>
         {/if}
@@ -115,14 +154,18 @@
                     <div class="value">{value}</div>
                 {/if}
             {:else}
-                <div>
+                <div class="text-field-container">
                     <Textfield
+                        class="text-field"
                         bind:label
                         bind:value
+                        bind:this={textField}
                         bind:type={computedType}
                         on:keypress={onKeyPress}
                         on:change
-                        input$aria-controls="helper-text-standard-field"/>
+                        on:input
+                        on:keydown
+                        input$aria-controls="helper-text-standard-field" />
                     {#if computedMessage}
                         <HelperText id="helper-text-standard-fields">
                             {computedMessage}
@@ -135,8 +178,7 @@
                 <IconButton
                     toggle
                     bind:pressed={passwordVisible}
-                    ripple={false}
-                    color="red">
+                    ripple={false}>
                     <Icon class="material-icons" on>visibility</Icon>
                     <Icon class="material-icons">visibility_off</Icon>
                 </IconButton>
@@ -214,7 +256,7 @@
                     <Menu static class="menu_field_type">
                         <List>
                             <Item on:click={() => (type = 'text')}>
-                                <Icon>
+                                <Icon color="surface">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="24"
@@ -225,7 +267,7 @@
                                 </Icon>
                             </Item>
                             <Item on:click={() => (type = 'password')}>
-                                <Icon>
+                                <Icon color="surface">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="24"
@@ -242,7 +284,7 @@
                                 </Icon>
                             </Item>
                             <Item on:click={() => (type = 'url')}>
-                                <Icon>
+                                <Icon color="surface">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="24"
@@ -261,10 +303,10 @@
                                     </svg>
                                 </Icon>
                             </Item>
-                            <Separator />
+                            <hr style="margin: 0 10px;" />
                             <Item
                                 on:click={() => dispatch('edit_field_name', index)}>
-                                <Icon>
+                                <Icon color="surface">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="24"
@@ -281,7 +323,7 @@
                                 </Icon>
                             </Item>
                             <Item on:click={() => dispatch('removefield')}>
-                                <Icon>
+                                <Icon color="surface">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="24"
@@ -302,7 +344,6 @@
             {#if parseInt(copy) && value}
                 <IconButton
                     on:click={() => {
-                        copyValue(value);
                         dispatch('copy');
                     }}>
                     <Icon>

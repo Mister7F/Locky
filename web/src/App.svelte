@@ -33,16 +33,12 @@
     }
     :global(*) {
         /* Svelte MUI */
-        --color: #a8ccc9;
-        --label: #a8ccc9;
-        --primary: #c876e0;
-        --background: #272b34;
-        --accent: #c876e0;
+        --background: #fcfcfc;
 
         /* Other colors */
-        --link-color: #1976d2;
+        --link-color: #1877f2;
         --error-color: #e53935;
-        --wallet-background: #fcfcfc;
+        --wallet-background: #edf0f2;
         --account-background: #fff;
 
         transition-timing-function: ease;
@@ -54,11 +50,6 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
-    }
-
-    :global(input) {
-        /* Fix svelte-material-ui input */
-        margin: 0 !important;
     }
 
     .root {
@@ -88,12 +79,12 @@
 
     /* Handle */
     :global(::-webkit-scrollbar-thumb) {
-        background: var(--background);
+        background: var(--primary);
     }
 
     /* Handle on hover */
     :global(::-webkit-scrollbar-thumb:hover) {
-        background: var(--background);
+        background: var(--primary);
     }
 </style>
 
@@ -101,7 +92,7 @@
     <script src="/lib/qrious.min.js">
 
     </script>
-    <script type="text/javascript" src="/eel.js">
+    <script type="text/javascript" src="/lib/eel.js">
 
     </script>
     <link

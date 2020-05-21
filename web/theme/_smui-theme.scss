@@ -1,48 +1,50 @@
 
+$mdc-theme-primary: #344955;
+$mdc-theme-on-primary: #dfe1e2;
 
-$mdc-theme-primary: #C876E0; // baseline purple, 500 tone
-$mdc-theme-on-primary: #a8ccc9;
+$mdc-theme-secondary: #faab1a;
+$mdc-theme-on-secondary: #232f34;
 
-$mdc-theme-accent: #018786;
-$mdc-theme-secondary: #272B34;
-$mdc-theme-on-secondary: #272B34;
-$mdc-theme-background: #272B34;
-
-$mdc-theme-surface: #272B34;
-$mdc-theme-on-surface: #a8ccc9;
+$mdc-theme-surface: #fff;
+$mdc-theme-on-surface: #4a6572;
 
 $mdc-theme-error: #e53935;
-$mdc-theme-on-error: #e53935;
+$mdc-theme-on-error: #fcfcfc;
+
+$mdc-theme-background: rgba(0, 0, 0, 0);
+$mdc-theme-accent: $mdc-theme-secondary;
+
+* {
+    // To be accessible in standard CSS
+    --primary: #{$mdc-theme-primary};
+    --on-primary: #{$mdc-theme-on-primary};
+
+    --secondary: #{$mdc-theme-secondary};
+    --on-secondary: #{$mdc-theme-on-secondary};
+
+    --surface: #{$mdc-theme-surface};
+    --on-surface: #{$mdc-theme-on-surface};
+}
 
 /* Fix the components */
 button:not(:disabled):active {
+    /* When clicking on a button, a white background pop */
     background-color: $mdc-theme-background;
 }
 
-.material-icons {
-    color: $mdc-theme-on-primary!important;
-}
 
-.mdc-menu-surface--open,
-.mdc-select__menu {
-    z-index: 99999;
-}
-
-.mdc-list svg {
-    fill: $mdc-theme-on-primary;
-}
 
 .mdc-dialog__surface {
+    /* Some dialog might be better than the parent
+       it shouldn't
+    */
     max-width: 90%!important;
 }
-.mdc-top-app-bar {
-    height: 56px;
-}
 
-.mdc-text-field .mdc-floating-label {
-    top: 30px;
-}
 
-.mdc-text-field .mdc-floating-label--float-above {
-    transform: translateY(-20px) scale(0.75);
+input, button, select, textarea {
+    /* Fix svelte-material-ui input
+       the border-bottom is not at the right place
+    */
+    margin: 0!important;
 }

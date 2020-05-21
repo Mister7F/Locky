@@ -1,6 +1,6 @@
 <script>
     import Textfield from "@smui/textfield";
-    import Include from "./Include.svelte";
+    import Field from "./components/Field.svelte";
     import { onMount } from "svelte";
 
     export let src;
@@ -74,7 +74,7 @@
         padding: 0 20px;
         box-sizing: border-box;
         transition-timing-function: ease-in-out;
-        background-color: var(--background);
+        background-color: var(--primary);
     }
 
     .icons.visible {
@@ -121,12 +121,12 @@
         {#if src}
             <img {src} alt={src} />
         {:else}
-            <Include src="/img/account_default.svg" />
+            <img src="/img/account_default.svg" alt="default" />
         {/if}
     </div>
     <div class="icons {chooseIcon && !readonly ? 'visible' : ''}">
         <div class="search">
-            <Textfield label="Search" bind:value={searchValue} />
+            <Field label="Search" copy="0" bind:value={searchValue} />
         </div>
         <div class="container">
             {#each currentSrcs as src}

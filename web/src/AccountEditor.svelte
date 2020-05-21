@@ -1,11 +1,13 @@
 <script>
     import Button from "@smui/button";
     import Textfield from "@smui/textfield";
-    import IconButton, { Icon } from "@smui/icon-button";
+    import Fab, { Label } from "@smui/fab";
     import Dialog, { Title, Content, Actions } from "@smui/dialog";
+    import IconButton from "@smui/icon-button";
 
-    import Field from "./Field.svelte";
+    import Field from "./components/Field.svelte";
     import ImagePicker from "./ImagePicker.svelte";
+    import Icon from './components/Icon.svelte';
     import { copyValue, getTotpCode } from "./Helper.svelte";
 
     import { createEventDispatcher } from "svelte";
@@ -101,6 +103,11 @@
         totpCode = null;
     }
 
+    function close () {
+        reset();
+        dispatch('close');
+    }
+
     async function showQrCode() {
         qrCodeDialog.open();
         setTimeout(() => {
@@ -123,7 +130,8 @@
 <style>
     .account {
         padding: 20px;
-        color: var(--color);
+        color: var(--on-primary);
+        background-color: var(--primary);
         margin: 0;
         width: 100%;
         height: 100%;
@@ -143,8 +151,8 @@
         text-align: center;
     }
 
-    :global(.save_account) {
-        position: absolute !important;
+    .account :global(.save_account) {
+        position: absolute;
         bottom: 20px;
         right: 20px;
     }
@@ -161,25 +169,42 @@
         width: 250px;
         height: 250px;
     }
+
+    :global(.account_editor_close_button) {
+        position: absolute;
+        right: 40px;
+    }
+
 </style>
 
 {#if account}
     <div class="account">
+        <IconButton class="account_editor_close_button" on:click={close}><Icon>close</Icon></IconButton>
         <div class="fields">
             <ImagePicker bind:src={account.icon} bind:readonly size="100px" />
 
-            <Field label="Name" bind:value={account.name} bind:readonly />
-            <Field label="Login" bind:value={account.login} bind:readonly />
+            <Field
+                label="Name"
+                bind:value={account.name}
+                bind:readonly
+                on:copy={() => copyValue(account.name)} />
+            <Field
+                label="Login"
+                bind:value={account.login}
+                bind:readonly
+                on:copy={() => copyValue(account.login)} />
             <Field
                 label="Password"
                 bind:value={account.password}
                 bind:readonly
-                type="password" />
+                type="password"
+                on:copy={() => copyValue(account.password)} />
             <Field
                 label="URL"
                 bind:value={account.url}
                 bind:readonly
-                type="url" />
+                type="url"
+                on:copy={() => copyValue(account.url)} />
             <Field
                 label="2FA"
                 bind:value={account.totp}
@@ -198,46 +223,31 @@
                     index={i}
                     canEditType="1"
                     on:removefield={removeField}
-                    on:edit_field_name={editFieldName} />
+                    on:edit_field_name={editFieldName}
+                    on:copy={() => copyValue(field.value)} />
             {/each}
 
             {#if !readonly}
-                <Button on:click={newField}>New field</Button>
+                <Button on:click={newField} color="secondary">New field</Button>
             {/if}
         </div>
 
-        <IconButton
+        <Fab
             class="save_account"
+            color="secondary"
             on:click={() => (readonly ? edit() : save())}>
-            <Icon>
-                {#if readonly}
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24">
-                        <path
-                            d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3
-                            17.25zM20.71 7.04c.39-.39.39-1.02
-                            0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83
-                            1.83 3.75 3.75 1.83-1.83z" />
-                        <path d="M0 0h24v24H0z" fill="none" />
-                    </svg>
-                {:else}
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-                        <path d="M1 14 L5 10 L13 18 L27 4 L31 8 L13 26 z" />
-                    </svg>
-                {/if}
+            <Icon class="material-icons">
+                {#if readonly}create{:else}done{/if}
             </Icon>
-        </IconButton>
+        </Fab>
     </div>
 
     <Dialog bind:this={qrCodeDialog}>
         <Title>2FA QR Code</Title>
         <Content>
             <p>Scan this QR Code with Google Authenticator, FreeOTP...</p>
-            <p>
-                <canvas id="qr_code_canvas" />
+            <p style="text-align: center">
+                <canvas id="qr_code_canvas"/>
             </p>
             <Button
                 style="float: right; margin-top: 10px;"

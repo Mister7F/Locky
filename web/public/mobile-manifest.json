@@ -1,0 +1,28 @@
+{
+  "short_name": "Locky",
+  "name": "Locky",
+  "description": "Store all you passwords in one place",
+  "icons": [
+    {
+      "src":"/img/favicon/16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    }, {
+      "src":"/img/favicon/32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }, {
+      "src":"/img/favicon/64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    }, {
+      "src":"/img/favicon/favicon.ico",
+      "sizes": "48x48 72x72 96x96",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#344955",
+  "Theme_color": "#344955",
+  "display": "standalone"
+}

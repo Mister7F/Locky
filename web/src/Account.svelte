@@ -2,17 +2,15 @@
     import Card, {
         Content,
         PrimaryAction,
-        Media,
-        MediaContent,
         Actions,
         ActionButtons,
         ActionIcons,
     } from "@smui/card";
     import Button, { Label } from "@smui/button";
     import IconButton, { Icon } from "@smui/icon-button";
-    import Include from "./Include.svelte";
-    import { copyValue, getTotpCode } from "./Helper.svelte";
+
     import { createEventDispatcher } from "svelte";
+    import { copyValue, getTotpCode } from "./Helper.svelte";
 
     const dispatch = createEventDispatcher();
     export let account;
@@ -31,7 +29,7 @@
     .account {
         padding: 0;
         margin: 0;
-        width: 180px;
+        width: 150px;
         height: 70px;
         margin: 10px;
         cursor: pointer;
@@ -48,12 +46,12 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        background-color: var(--account-background);
-        border: 1px solid var(--background);
+        background-color: var(--surface);
+        border: 1px solid var(--on-surface);
         border-radius: 2px;
         transition: 0.1s;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-        width: 180px;
+        width: 150px;
         height: 70px;
         margin: 0;
         overflow: hidden;
@@ -65,6 +63,8 @@
         flex-direction: row;
         justify-content: center;
         align-items: center;
+        max-height: 100%;
+        max-width: 100%;
     }
 
     h5 {
@@ -73,12 +73,8 @@
 
     .image {
         margin-right: 10px;
-    }
-
-    .image * {
-        width: 30px;
-        max-height: 30px;
-        fill: var(--background);
+        max-height: 40px;
+        max-width: 100%;
     }
 
     .strength {
@@ -104,60 +100,70 @@
         border: 1px solid var(--accent);
     }
 
-    .account:hover .edit {
-        opacity: 1;
-    }
-
     img {
         pointer-events: none;
+        max-height: 100%;
+        max-width: 100%;
+        height: 30px;
     }
 
     /* Detail mode */
     .detail-card {
-        margin: 15px;
-        color: var(--color);
+        margin: 0;
+        color: var(--on-surface);
+        width: 280px;
+        height: 170px;
+        overflow: hidden;
     }
     :global(.detail_primary_action) {
-        height: 70%;
+        padding: 5px;
+        border-bottom: 1px solid var(--on-surface);
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
     }
     .folder :global(.detail_primary_action) {
-        height: 100%;
+        height: 145px;
+        border: 0;
     }
     .detail_img {
-        margin: auto;
-        max-width: 100%;
-        margin-top: 10%;
-        height: 65%;
-        min-height: 65%;
+        min-height: 70px;
+        min-width: 70px;
+        height: 70px;
+        width: 70px;
+        padding: 8px;
+        box-sizing: border-box;
     }
     .detail_img img {
         max-width: 100%;
         max-height: 100%;
         height: 100%;
-        opacity: 0.5;
     }
 
     .detail_title {
-        color: white;
-        padding: 5px 20px;
-        margin-top: -100%;
+        margin-left: 10px;
         box-sizing: border-box;
     }
 
     .detail_name {
-        font-size: 1.7em;
+        font-weight: 600;
+        font-size: 1.5em;
     }
     .detail_login {
+        font-weight: 500;
         font-size: 1em;
     }
 
     :global(.detail-card) .strength {
-        margin-top: 0;
+        margin-top: 0px;
         margin-bottom: -30px;
         transform: rotate(270deg);
         margin-left: calc(100% - 30px);
     }
 
+    :global(.detail_account_actions) {
+    }
 </style>
 
 {#if viewMode === 'minimalist'}
@@ -176,15 +182,15 @@
     </div>
 {:else}
     <div class="detail-card {account.folder ? 'folder' : ''}">
-        <Card style="height: 150px; width: 250px;">
+        <Card>
+            {#if !account.folder}
+                <div
+                    class="strength"
+                    style="--force: {account.force || 0}" />
+            {/if}
             <PrimaryAction
                 class="detail_primary_action"
                 on:click={() => dispatch('click')}>
-                {#if !account.folder}
-                    <div
-                        class="strength"
-                        style="--force: {account.force || 0}" />
-                {/if}
                 <div class="detail_img">
                     <img src={account.icon} alt="Account" />
                 </div>
