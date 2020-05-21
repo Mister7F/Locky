@@ -134,14 +134,16 @@
         max-width: 100%;
         max-height: 100%;
         height: 100%;
-        opacity: 0.2;
+        opacity: 0.5;
     }
 
     .detail_title {
+        color: white;
         padding: 5px 20px;
         margin-top: -100%;
         box-sizing: border-box;
     }
+
     .detail_name {
         font-size: 1.7em;
     }
@@ -156,28 +158,6 @@
         margin-left: calc(100% - 30px);
     }
 
-    /* List mode */
-    .account_list {
-        border: 1px solid red;
-        width: calc(100vw - 20px);
-        height: 60px;
-        padding: 0 50px;
-        align-items: center;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        box-sizing: border-box;
-        margin: 10px;
-    }
-
-    .account_list_actions {
-        border: 1px solid red;
-        display: flex;
-        align-items: center;
-        flex-direction: row;
-        justify-content: flex-end;
-        box-sizing: border-box;
-    }
 </style>
 
 {#if viewMode === 'minimalist'}

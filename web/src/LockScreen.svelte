@@ -43,16 +43,11 @@
         }
     }
 
-    function onKeyPress(e) {
+    function onEnter(e) {
         if (wrongPassword) {
             wrongPassword = false;
         }
-
-        if (!e) e = window.event;
-        if ((e.keyCode || e.which) == 13) {
-            unlock();
-            return false;
-        }
+        unlock();
     }
 
     checkPassword();
@@ -140,7 +135,7 @@
     <Field
         label="Password"
         bind:value={password}
-        on:keypress={onKeyPress}
+        on:enter={onEnter}
         type="password"
         copy="0" />
 </div>

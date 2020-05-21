@@ -4,8 +4,8 @@ Locky is a password manager written in python
 *Under development*
 
 <p align="center">
-    <a href="https://www.youtube.com/watch?v=AtO5PiIEL8w" target="_blank">
-        <img src="https://raw.githubusercontent.com/Mister7F/Locky/master/screenshots/1.png"/>
+    <a href="https://youtu.be/4DK_RlTr8Jg" target="_blank">
+        <img src="https://raw.githubusercontent.com/Mister7F/Locky/master/screenshots/presentation.gif"/>
     </a>
 </p>
 

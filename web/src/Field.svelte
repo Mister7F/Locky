@@ -1,5 +1,4 @@
 <script>
-    import Select, { Option } from "@smui/select";
     import Textfield from "@smui/textfield";
     import List, {
         Item,
@@ -40,6 +39,14 @@
             : type === "password"
             ? "Strength:" + value.length
             : null;
+
+    function onKeyPress(e) {
+        if (!e) e = window.event;
+        if ((e.keyCode || e.which) == 13) {
+            dispatch('enter');
+            return false;
+        }
+    }
 </script>
 
 <style>
@@ -57,6 +64,7 @@
         align-items: center;
         width: 100%;
         height: 50px;
+        box-sizing: border-box;
     }
 
     .label {
@@ -82,10 +90,11 @@
 
     :global(.menu_field_type) {
         margin-top: 310px;
-        margin-left: -75px;
+        margin-left: -60px;
         min-width: 60px;
         width: 60px;
         z-index: 999999;
+        box-sizing: border-box;
     }
 </style>
 
@@ -111,11 +120,11 @@
                         bind:label
                         bind:value
                         bind:type={computedType}
-                        on:keypress
+                        on:keypress={onKeyPress}
                         on:change
-                        input$aria-controls="helper-text-standard-a" />
+                        input$aria-controls="helper-text-standard-field"/>
                     {#if computedMessage}
-                        <HelperText id="helper-text-standard-a">
+                        <HelperText id="helper-text-standard-fields">
                             {computedMessage}
                         </HelperText>
                     {/if}

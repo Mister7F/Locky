@@ -32,7 +32,7 @@
 
     function closeMenu() {
         menuVisible = false;
-        activeAccountIndex = null;
+        activeAccountIndex = -1;
         if (accountEditor) accountEditor.reset();
     }
 
@@ -99,6 +99,7 @@
                 // write on existing account
                 wallet[activeAccountIndex] = account;
             }
+            closeMenu();
         } else {
             dispatch("lock");
         }
@@ -148,7 +149,7 @@
     }
 
     async function search(event) {
-        if (!event.detail) {
+        if (!event.detail || !event.detail.length) {
             openFolder(currentFolderId);
             return;
         }
