@@ -2,6 +2,7 @@
     import Wallet from "./Wallet.svelte";
     import LockScreen from "./LockScreen.svelte";
     import { getCookie } from "./Helper.svelte";
+    import { logout } from "./Api.svelte";
 
     let wallet = [];
     let locked = true;
@@ -18,7 +19,7 @@
     }
 
     async function lock() {
-        await fetch("/logout");
+        await logout();
         locked = true;
         wallet = [];
     }

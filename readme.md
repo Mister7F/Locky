@@ -44,9 +44,7 @@ Use `prettier` to format the svelte file
 # Mobile
 Want to use the application on mobile ?
 
-Go on your browser, navigate to your Locky instance, and send the application to the home screen.
-
-https://www.howtogeek.com/196087/how-to-add-websites-to-the-home-screen-on-any-smartphone-or-tablet/
+Go on your browser, navigate to your Locky instance, and <a href="https://www.howtogeek.com/196087/how-to-add-websites-to-the-home-screen-on-any-smartphone-or-tablet/">send the application to the home screen</a>.
 
 # HTTPS
 If you want to access to the application remotely, you might want to use HTTPS (and you really should).
@@ -57,7 +55,7 @@ You can generate a certificate
 Then, start the server with the SSL certificate
 > `python main.py --cert=./certificate/server.crt --key=./certificate/server.key`
 
-And register the certificate on your device (to prevent MITM, do not accept unknown certificates)
+Register the certificate on your devices (to prevent MITM, do not accept unknown certificates)
 
 Android,
 > `Settings -> Password & Security -> Privacy -> Encryption & credentials -> Install the certificate (.cert) from your SD card`
@@ -84,7 +82,6 @@ The accounts are stored in a SQLite encrypted database
     - `database.py`, optimize `move_account` to drop the column `sequence_tmp`
     - use only account ID when possible
     - clean database function
-    - error on component (shake them)
     - close the process when the window is closed
 - Security
     - Check route login
@@ -102,5 +99,5 @@ The accounts are stored in a SQLite encrypted database
 - Sync with Dropbox
 - Check if passwords have been leaked
 - Write notes in markdown
-
+- Keep an history of all the modification
 

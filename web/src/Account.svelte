@@ -184,9 +184,7 @@
     <div class="detail-card {account.folder ? 'folder' : ''}">
         <Card>
             {#if !account.folder}
-                <div
-                    class="strength"
-                    style="--force: {account.force || 0}" />
+                <div class="strength" style="--force: {account.force || 0}" />
             {/if}
             <PrimaryAction
                 class="detail_primary_action"
@@ -203,9 +201,9 @@
                 <Actions class="detail_account_actions">
                     <ActionButtons>
                         {#if account.url && account.url.startsWith('http')}
-                            <Button href={account.url} target="_blank">
-                                <Label>Open</Label>
-                            </Button>
+                            <IconButton class="material-icons" title="Open URL" href={account.url} target="_blank">
+                                launch
+                            </IconButton>
                         {/if}
                     </ActionButtons>
                     <ActionIcons>

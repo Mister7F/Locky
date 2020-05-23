@@ -7,7 +7,7 @@
 
     import Field from "./components/Field.svelte";
     import ImagePicker from "./ImagePicker.svelte";
-    import Icon from './components/Icon.svelte';
+    import Icon from "./components/Icon.svelte";
     import { copyValue, getTotpCode } from "./Helper.svelte";
 
     import { createEventDispatcher } from "svelte";
@@ -103,9 +103,9 @@
         totpCode = null;
     }
 
-    function close () {
+    function close() {
         reset();
-        dispatch('close');
+        dispatch("close");
     }
 
     async function showQrCode() {
@@ -174,12 +174,13 @@
         position: absolute;
         right: 40px;
     }
-
 </style>
 
 {#if account}
     <div class="account">
-        <IconButton class="account_editor_close_button" on:click={close}><Icon>close</Icon></IconButton>
+        <IconButton class="account_editor_close_button" on:click={close}>
+            <Icon>close</Icon>
+        </IconButton>
         <div class="fields">
             <ImagePicker bind:src={account.icon} bind:readonly size="100px" />
 
@@ -236,7 +237,7 @@
             class="save_account"
             color="secondary"
             on:click={() => (readonly ? edit() : save())}>
-            <Icon class="material-icons">
+            <Icon class="material-icons" color="secondary">
                 {#if readonly}create{:else}done{/if}
             </Icon>
         </Fab>
@@ -247,7 +248,7 @@
         <Content>
             <p>Scan this QR Code with Google Authenticator, FreeOTP...</p>
             <p style="text-align: center">
-                <canvas id="qr_code_canvas"/>
+                <canvas id="qr_code_canvas" />
             </p>
             <Button
                 style="float: right; margin-top: 10px;"

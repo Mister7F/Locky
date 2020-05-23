@@ -1,4 +1,5 @@
 <script>
+    import {login, getAccounts} from "./Api.svelte";
     import Field from "./components/Field.svelte";
     import { createEventDispatcher } from "svelte";
     const dispatch = createEventDispatcher();
@@ -15,19 +16,13 @@
     $: fillColor = wrongPassword ? "var(--error-color)" : "var(--secondary)";
 
     async function checkPassword() {
-        let response = await fetch("/login", {
-            method: "post",
-            headers: { "Content-Type": "application/json;" },
-            body: JSON.stringify({ login: "admin", password: password }),
-        });
-
-        if (response.ok) {
-            let response = await fetch("/open_folder");
-            let wallet = await response.json();
+        if (await login(password)) {
+            let wallet = await getAccounts();
             dispatch("open_wallet", wallet);
+            return true;
         }
 
-        return response.ok;
+        return false;
     }
 
     async function unlock() {

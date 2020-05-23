@@ -1,3 +1,7 @@
+from flask import request, session
+from functools import wraps
+
+
 class Error(Exception):
     status_code = 400
 
@@ -28,3 +32,28 @@ def url_ok(url, port):
         return r.status == 200
     except Exception:
         return False
+
+
+def check_endpoint(only_json=True, check_csrf_token=True, check_login=True):
+    """Wrapper for Flask JSON routes.
+
+    Make some security verification and parse the headers.
+    """
+    def decorator(function):
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+            if check_login and not session.get("login"):
+                raise Error("Not logged")
+
+            headers = request.headers
+            if only_json and headers.get('Content-Type') != 'application/json':
+                raise Error("Wrong headers")
+
+            csrf_token = session.get("csrf_token")
+            provided_csrf_token = headers.get("CSRF-Token")
+            if check_csrf_token and provided_csrf_token != csrf_token or not csrf_token:
+                raise Error("Wrong CSRF token")
+
+            return function(*args, **kwargs)
+        return wrapper
+    return decorator

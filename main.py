@@ -6,15 +6,14 @@ import json
 import pyotp
 
 from database import Database
-from flask_helper import Error
-from flask import Flask, request, send_from_directory, session
+from flask_helper import Error, check_endpoint
+from flask import Flask, request, send_from_directory, session, render_template
 from werkzeug.exceptions import BadRequest
 from flask import jsonify
 
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="web/public")
 app.secret_key = os.urandom(1024).hex()
-
 
 database_connections = {}
 
@@ -25,16 +24,19 @@ Svelte serving
 
 @app.route("/")
 def base():
-    return send_from_directory("web/public", "index.html")
+    session["csrf_token"] = os.urandom(32).hex()
+    return render_template("index.html", csrf_token=session["csrf_token"])
 
 
 # Path for all the static files (compiled JS/CSS, etc.)
 @app.route("/<path:path>")
 def home(path):
+    assert ".." not in path
     return send_from_directory("web/public", path)
 
 
 @app.route("/account_icons")
+@check_endpoint(only_json=False, check_csrf_token=False)
 def account_icons():
     if not session.get("login"):
         raise
@@ -57,6 +59,7 @@ def handle_invalid_usage(error):
 
 
 @app.route("/login", methods=["POST"])
+@check_endpoint(check_login=False)
 def login():
     if session.get("login"):
         return "ok"
@@ -78,7 +81,6 @@ def login():
         raise BadRequest("Wrong password")
 
     session["login"] = login
-
     return "ok"
 
 
@@ -90,9 +92,10 @@ def logout():
 
 
 @app.route("/save_account", methods=["POST"])
+@check_endpoint()
 def save_account():
     account = request.json
-    if not session.get("login") or not account:
+    if not account:
         raise Error("Invalid request")
 
     if "id" not in account:
@@ -104,10 +107,11 @@ def save_account():
 
 
 @app.route("/remove_account", methods=["POST"])
+@check_endpoint()
 def remove_account():
     account = request.json
 
-    if not session.get("login") or not account or "id" not in account:
+    if not account or "id" not in account:
         raise Error("Invalid request")
 
     database_connections[session["login"]].remove_account(account["id"])
@@ -116,10 +120,8 @@ def remove_account():
 
 
 @app.route("/move_account", methods=["POST"])
+@check_endpoint()
 def move_account():
-    if not session.get("login"):
-        raise Error("Invalid request")
-
     account_id = request.json.get("account_id")
     new_index = request.json.get("new_index")
     into_folder = request.json.get("into_folder")
@@ -136,10 +138,8 @@ def move_account():
 
 
 @app.route("/move_up", methods=["POST"])
+@check_endpoint()
 def move_up():
-    if not session.get("login"):
-        raise Error("Invalid request")
-
     account_id = int(request.json.get("account_id"))
 
     database = database_connections[session["login"]]
@@ -151,37 +151,28 @@ def move_up():
 
 
 @app.route("/open_folder", methods=["GET"])
+@check_endpoint(only_json=False, check_csrf_token=False)
 def open_folder():
-    if not session.get("login"):
-        raise Error("Invalid request")
-
     folder_id = int(request.args.get("id", 0))
-
     return json.dumps(database_connections[session["login"]].open_folder(folder_id))
 
 
 @app.route("/account/<int:account_id>", methods=["GET"])
+@check_endpoint(only_json=False, check_csrf_token=False)
 def account(account_id):
-    if not session.get("login"):
-        raise Error("Invalid request")
-
     return json.dumps(database_connections[session["login"]].get_account(account_id))
 
 
 @app.route("/search", methods=["GET"])
+@check_endpoint(only_json=False, check_csrf_token=False)
 def search():
     search = request.args.get("q")
-    if not session.get("login"):
-        raise Error("Invalid request")
-
     return json.dumps(database_connections[session["login"]].search_account(search))
 
 
 @app.route("/change_password", methods=["POST"])
+@check_endpoint()
 def change_password():
-    if not session.get("login"):
-        raise Error("Invalid request")
-
     old_password = request.json.get("old_password")
     new_password = request.json.get("new_password")
 

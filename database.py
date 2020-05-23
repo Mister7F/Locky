@@ -28,7 +28,6 @@ class Database:
                       fields TEXT DEFAULT '[]',
                       folder BOOLEAN DEFAULT false,
                       sequence REAL DEFAULT 0,
-                      sequence_tmp REAL DEFAULT 0,
                       folder_id INTEGER DEFAULT 0
                     )
                 """
@@ -166,11 +165,11 @@ class Database:
         current_folder_id = self.get_account(account_id)["folder_id"]
 
         with self.conn:
+            # can not update in the first query because SQLite will perform the
+            # second SELECT command on the current modified columns
             self.cursor.execute(
                 """
-                UPDATE accounts
-                   SET sequence_tmp =
-                       CASE
+                SELECT (CASE
                            WHEN id != ? THEN (
                                 SELECT COUNT(*)
                                   FROM accounts AS a
@@ -184,7 +183,8 @@ class Database:
                                    AND a.id != accounts.id
                            )
                            ELSE (? - 0.5)
-                       END
+                       END) as new_sequence, id
+                  FROM accounts
                  WHERE folder_id = ?
                 """,
                 [
@@ -196,15 +196,15 @@ class Database:
                 ],
             )
 
-            # work on a temporary column because SQLite will perform the previous
-            # SELECT on the current modified rows
-            self.cursor.execute(
+            results = self.cursor.fetchall()
+
+            self.cursor.executemany(
                 """
                 UPDATE accounts
-                   SET sequence = sequence_tmp
-                 WHERE folder_id = ?
+                   SET sequence = ?
+                 WHERE id = ?
                 """,
-                [current_folder_id],
+                results,
             )
 
     def move_into_folder(self, account_id, folder_id):

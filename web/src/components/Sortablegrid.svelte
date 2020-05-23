@@ -58,7 +58,10 @@
             } else {
                 // desktop
                 xPosElement = event.x - draggedElement.offsetLeft;
-                yPosElement = event.y - draggedElement.offsetTop + document.querySelector(".grid").scrollTop;
+                yPosElement =
+                    event.y -
+                    draggedElement.offsetTop +
+                    document.querySelector(".grid").scrollTop;
                 mobile = false;
             }
 
@@ -83,7 +86,6 @@
             );
 
             document.body.appendChild(draggedElement);
-
         }, 150);
     }
 
@@ -247,7 +249,6 @@
         overflow-y: auto;
         max-height: 100%;
         background: transparent;
-
     }
 
     .items {
@@ -282,9 +283,9 @@
     :global(.dragged),
     :global(.dragged) *,
     :global(.dragged) div {
-        cursor: grabbing!important;
-        cursor: -moz-grabbing!important;
-        cursor: -webkit-grabbing!important;
+        cursor: grabbing !important;
+        cursor: -moz-grabbing !important;
+        cursor: -webkit-grabbing !important;
     }
 
     :global(.ghost) {

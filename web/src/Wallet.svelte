@@ -9,6 +9,7 @@
     import Sortablegrid from "./components/Sortablegrid.svelte";
     import Sidepanel from "./components/Sidepanel.svelte";
     import { getCookie } from "./Helper.svelte";
+    import {getAccounts, updateAccount, searchAccount, moveAccountUp, getAccount, moveAccountInFolder} from "./Api.svelte";
 
     import { createEventDispatcher } from "svelte";
 
@@ -42,18 +43,7 @@
     }
 
     async function moveAccount(event) {
-        let response = await fetch("/move_account", {
-            method: "post",
-            headers: { "Content-Type": "application/json;" },
-            body: JSON.stringify({
-                account_id: event.detail.fromItem.id,
-                new_index: event.detail.to,
-                into_folder: event.detail.intoFolder,
-                dest_account_id: event.detail.destItem.id,
-            }),
-        });
-
-        if (!response.ok) {
+        if (!await moveAccountInFolder(event.detail)) {
             dispatch("lock");
         }
     }
@@ -83,14 +73,10 @@
     }
 
     async function saveAccount(event) {
-        let response = await fetch("/save_account", {
-            method: "post",
-            headers: { "Content-Type": "application/json;" },
-            body: JSON.stringify(event.detail.account),
-        });
+        let account = await updateAccount(event.detail.account);
 
-        if (response.ok) {
-            let account = computePasswordStrength(await response.json());
+        if (account) {
+            account = computePasswordStrength(account);
             if (activeAccountIndex < 0) {
                 // new account
                 wallet = wallet.concat(account);
@@ -104,31 +90,12 @@
         }
     }
 
-    async function removeAccount(event) {
-        let response = await fetch("/remove_account", {
-            method: "post",
-            headers: { "Content-Type": "application/json;" },
-            body: JSON.stringify(event.detail.account),
-        });
-        if (response.ok) {
-            wallet = wallet.filter((account) => {
-                return account.id !== event.detail.account.id;
-            });
-            closeMenu();
-        } else {
-            dispatch("lock");
-        }
-    }
-
     export async function openFolder(folderId) {
-        let response = await fetch(
-            "/open_folder?id=" + encodeURIComponent(folderId || 0)
-        );
-        if (response.ok) {
+        let accounts = await getAccounts(folderId);
+
+        if (accounts) {
             currentFolderId = folderId;
             document.cookie = "currentFolderId=" + folderId;
-
-            let accounts = await response.json();
             for (let account of accounts) {
                 account = computePasswordStrength(account);
             }
@@ -137,13 +104,9 @@
     }
 
     async function goBack() {
-        let response = await fetch(
-            "/account/" + encodeURIComponent(currentFolderId || 0)
-        );
-
-        if (response.ok) {
-            let folder = await response.json();
-            await openFolder(folder.folder_id);
+        let currentFolder = await getAccount(currentFolderId || 0);
+        if (currentFolder) {
+            await openFolder(currentFolder.folder_id);
         }
     }
 
@@ -153,11 +116,9 @@
             return;
         }
 
-        let response = await fetch(
-            "/search?q=" + encodeURIComponent(event.detail)
-        );
-        if (response.ok) {
-            wallet = await response.json();
+        let results = await searchAccount(event.detail);
+        if (results) {
+            wallet = results;
         }
     }
 
@@ -185,13 +146,7 @@
         let account = event.detail.item;
 
         if (action === "parent") {
-            let response = await fetch("/move_up", {
-                method: "post",
-                headers: { "Content-Type": "application/json;" },
-                body: JSON.stringify({ account_id: account.id }),
-            });
-
-            if (response.ok) {
+            if (await moveAccountUp(account.id)) {
                 await openFolder(currentFolderId);
             }
         } else if (action === "edit") {
@@ -257,15 +212,13 @@
     :global(.new_account:active) {
         transform: rotate(-90deg);
     }
-
 </style>
 
 <Sidepanel bind:visible={menuVisible}>
     <AccountEditor
         bind:this={accountEditor}
-        on:close={() => menuVisible = false}
-        on:save_account={saveAccount}
-        on:remove_account={removeAccount} />
+        on:close={() => (menuVisible = false)}
+        on:save_account={saveAccount}/>
 </Sidepanel>
 <Navbar
     on:lock

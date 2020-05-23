@@ -2,6 +2,7 @@
     import Button, { Icon } from "@smui/button";
     import Dialog, { Title, Content, Actions } from "@smui/dialog";
 
+    import {updatePassword} from "./Api.svelte";
     import Field from "./components/Field.svelte";
 
     let oldPassword = "";
@@ -15,16 +16,7 @@
     $: canSubmit = newPassword && newPassword === confirmPassword;
 
     async function changePassword() {
-        let response = await fetch("/change_password", {
-            method: "post",
-            headers: { "Content-Type": "application/json;" },
-            body: JSON.stringify({
-                old_password: oldPassword,
-                new_password: newPassword,
-            }),
-        });
-
-        if (response.ok) {
+        if (await updatePassword(oldPassword, newPassword)) {
             dialog.close();
         } else {
             error = true;
@@ -57,7 +49,6 @@
         color: var(--on-primary);
         background-color: var(--primary);
     }
-
 </style>
 
 <Dialog width="290" bind:this={dialog} class="change_password_dialog">
