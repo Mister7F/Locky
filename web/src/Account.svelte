@@ -201,7 +201,11 @@
                 <Actions class="detail_account_actions">
                     <ActionButtons>
                         {#if account.url && account.url.startsWith('http')}
-                            <IconButton class="material-icons" title="Open URL" href={account.url} target="_blank">
+                            <IconButton
+                                class="material-icons"
+                                title="Open URL"
+                                href={account.url}
+                                target="_blank">
                                 launch
                             </IconButton>
                         {/if}

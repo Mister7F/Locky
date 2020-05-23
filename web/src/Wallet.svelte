@@ -9,7 +9,14 @@
     import Sortablegrid from "./components/Sortablegrid.svelte";
     import Sidepanel from "./components/Sidepanel.svelte";
     import { getCookie } from "./Helper.svelte";
-    import {getAccounts, updateAccount, searchAccount, moveAccountUp, getAccount, moveAccountInFolder} from "./Api.svelte";
+    import {
+        getAccounts,
+        updateAccount,
+        searchAccount,
+        moveAccountUp,
+        getAccount,
+        moveAccountInFolder,
+    } from "./Api.svelte";
 
     import { createEventDispatcher } from "svelte";
 
@@ -43,7 +50,7 @@
     }
 
     async function moveAccount(event) {
-        if (!await moveAccountInFolder(event.detail)) {
+        if (!(await moveAccountInFolder(event.detail))) {
             dispatch("lock");
         }
     }
@@ -218,7 +225,7 @@
     <AccountEditor
         bind:this={accountEditor}
         on:close={() => (menuVisible = false)}
-        on:save_account={saveAccount}/>
+        on:save_account={saveAccount} />
 </Sidepanel>
 <Navbar
     on:lock

@@ -4,9 +4,9 @@ Locky is a password manager written in python
 *Under development*
 
 <p align="center">
-    <a href="https://youtu.be/4DK_RlTr8Jg" target="_blank">
-        <img src="https://raw.githubusercontent.com/Mister7F/Locky/master/screenshots/presentation.gif"/>
-    </a>
+    <img src="https://raw.githubusercontent.com/Mister7F/Locky/master/screenshots/presentation.gif" height="700"/>
+    <br/>
+    <a href="https://github.com/Mister7F/Locky/blob/master/screenshots/presentation.mp4?raw=true" target="_blank">Download the video</a>
 </p>
 
 # Install
@@ -77,6 +77,8 @@ The accounts are stored in a SQLite encrypted database
     - create initial wallet
     - reverse navigation
     - show copy notification in the account editor
+    - theme component with sass variable
+    - show database name
 - Backend
     - G-Drive sync
     - `database.py`, optimize `move_account` to drop the column `sequence_tmp`
@@ -84,10 +86,6 @@ The accounts are stored in a SQLite encrypted database
     - clean database function
     - close the process when the window is closed
 - Security
-    - Check route login
-    - Check route path (home & base routes)
-    - Check CSRF
-    - Add unit test on the endpoints
     - HMAC database
 - Other
     - Build binary
@@ -100,4 +98,10 @@ The accounts are stored in a SQLite encrypted database
 - Check if passwords have been leaked
 - Write notes in markdown
 - Keep an history of all the modification
+- Generate password
+- Shortcut
+    - ctrl C
+    - ctrl V
+    - escape to close form
+- List view with folders on the left side
 

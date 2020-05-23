@@ -4,8 +4,8 @@ import requests
 
 # settings to test the running application
 BASE_URL = "http://localhost:5002/"
-USERNAME = "admin"
-PASSWORD = "a"
+USERNAME = "zzz_test_db"
+PASSWORD = "zzz_test_db"
 
 
 def get_csrf_token(session):
@@ -34,7 +34,7 @@ def test_login():
 
     response = session.post(
         BASE_URL + "login",
-        json={"login": "test", "password": "qsd54qsd"},
+        json={"login": "test", "password": "q68qsd65qsd65qsd"},
         headers={"CSRF-Token": csrf_token},
     )
     assert "Wrong password" in response.text
@@ -54,7 +54,7 @@ def test_login():
         headers={"CSRF-Token": new_csrf_token},
     )
     assert response.status_code == 200
-    assert "ok" in response.text
+    assert USERNAME in response.text
 
     # use the old token
     # a new one must be generated

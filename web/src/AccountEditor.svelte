@@ -174,6 +174,13 @@
         position: absolute;
         right: 40px;
     }
+
+    :global(.account_editor_dialog .mdc-dialog__surface),
+    :global(.account_editor_dialog p),
+    :global(.account_editor_dialog .mdc-dialog__title) {
+        color: var(--on-primary);
+        background-color: var(--primary);
+    }
 </style>
 
 {#if account}
@@ -243,7 +250,7 @@
         </Fab>
     </div>
 
-    <Dialog bind:this={qrCodeDialog}>
+    <Dialog bind:this={qrCodeDialog} class="account_editor_dialog">
         <Title>2FA QR Code</Title>
         <Content>
             <p>Scan this QR Code with Google Authenticator, FreeOTP...</p>
@@ -252,13 +259,14 @@
             </p>
             <Button
                 style="float: right; margin-top: 10px;"
+                color="secondary"
                 on:click={() => qrCodeDialog.close()}>
                 Close
             </Button>
         </Content>
     </Dialog>
 
-    <Dialog bind:this={fieldNameDialog}>
+    <Dialog bind:this={fieldNameDialog} class="account_editor_dialog">
         <Title>Field name</Title>
         <Content>
             {#if editedFieldIndex >= 0}
@@ -268,6 +276,7 @@
             {/if}
             <Button
                 style="float: right; margin-top: 10px;"
+                color="secondary"
                 on:click={() => fieldNameDialog.close()}>
                 Save
             </Button>

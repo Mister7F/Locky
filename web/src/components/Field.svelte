@@ -115,6 +115,8 @@
     .field {
         color: var(--on-primary);
     }
+
+    /*
     .field :global(input),
     .field :global(.mdc-text-field-helper-text),
     .field :global(.mdc-floating-label) {
@@ -135,6 +137,7 @@
     .field :global(.mdc-line-ripple) {
         background-color: var(--secondary) !important;
     }
+    */
 </style>
 
 {#if value || !readonly}

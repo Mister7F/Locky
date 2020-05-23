@@ -1,11 +1,19 @@
 <script>
-    import {login, getAccounts} from "./Api.svelte";
+    import Select, { Option } from "@smui/select";
+    import FormField from "@smui/form-field";
+    import Switch from "@smui/switch";
+    import Button from "@smui/button";
+    import Icon from "@smui/select/icon/index";
+
+    import { login, getAccounts, getDatabasesName } from "./Api.svelte";
     import Field from "./components/Field.svelte";
     import { createEventDispatcher } from "svelte";
     const dispatch = createEventDispatcher();
 
     const maxLen = 8;
+    let username = "";
     let password = "";
+    let create = false;
 
     let wrongPassword = false;
 
@@ -16,7 +24,7 @@
     $: fillColor = wrongPassword ? "var(--error-color)" : "var(--secondary)";
 
     async function checkPassword() {
-        if (await login(password)) {
+        if (await login(username, password)) {
             let wallet = await getAccounts();
             dispatch("open_wallet", wallet);
             return true;
@@ -45,6 +53,16 @@
     }
 
     checkPassword();
+
+    let databases;
+    (async () => {
+        databases = await getDatabasesName();
+        if (!databases) {
+            create = true;
+        } else {
+            username = databases[0];
+        }
+    })();
 </script>
 
 <style>
@@ -106,6 +124,28 @@
             transform: translate3d(4px, 0, 0);
         }
     }
+
+    .lock :global(.mdc-select) {
+        width: 100%;
+    }
+
+    .fields {
+        padding: 20px 0;
+        width: 250px;
+        height: 280px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .fields > :global(*:not(.mdc-form-field)) {
+        width: 100%;
+    }
+    .fields > :global(*) {
+        margin-bottom: 30px;
+        height: 60px;
+    }
 </style>
 
 <div class="lock" style="--lock-value: {svgValue}; --fill-color: {fillColor}">
@@ -125,12 +165,42 @@
             0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3-9H8.9V6c0-1.71 1.39-3.1
             3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
     </svg>
+    <div class="fields">
+        {#if databases}
+        <FormField>
+            <Switch bind:checked={create} />
+            <span slot="label">Create a new wallet</span>
+        </FormField>
+        {/if}
 
-    <Field
-        label="Password"
-        bind:value={password}
-        on:enter={onEnter}
-        on:input={() => (wrongPassword = false)}
-        type="password"
-        copy="0" />
+        {#if databases && !create}
+            <Select
+                variant="outlined"
+                enhanced
+                bind:value={username}
+                label="Username"
+                withLeadingIcon>
+                <span slot="icon">
+                    <Icon class="material-icons">account_circle</Icon>
+                </span>
+                {#each databases as database, i}
+                    <Option value={database}>{database}</Option>
+                {/each}
+            </Select>
+        {:else}
+            <Field label="Username" bind:value={username} copy="0" />
+        {/if}
+
+        <Field
+            label="Password"
+            bind:value={password}
+            on:enter={onEnter}
+            on:input={() => (wrongPassword = false)}
+            type="password"
+            copy="0" />
+
+        <Button color="secondary" on:click={onEnter}>
+            {create ? 'Create' : 'Login'}
+        </Button>
+    </div>
 </div>

@@ -2,7 +2,7 @@
     import Button, { Icon } from "@smui/button";
     import Dialog, { Title, Content, Actions } from "@smui/dialog";
 
-    import {updatePassword} from "./Api.svelte";
+    import { updatePassword } from "./Api.svelte";
     import Field from "./components/Field.svelte";
 
     let oldPassword = "";

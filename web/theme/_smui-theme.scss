@@ -42,9 +42,68 @@ button:not(:disabled):active {
 }
 
 
+/* Select */
+
+$mdc-select-dropdown-color: $mdc-theme-on-primary;
+$mdc-select-ink-color: rgba($mdc-theme-on-primary, .87);
+$mdc-select-icon-color: rgba($mdc-theme-on-primary, .54);
+$mdc-select-label-color: rgba($mdc-theme-on-primary, .6);
+$mdc-select-focused-label-color: rgba($mdc-theme-secondary, .87);
+$mdc-select-bottom-line-idle-color: rgba($mdc-theme-on-primary, .42);
+$mdc-select-bottom-line-hover-color: rgba($mdc-theme-on-primary, .87);
+$mdc-select-helper-text-color: rgba($mdc-theme-on-primary, .6);
+$mdc-select-fill-color: mix($mdc-theme-on-primary, $mdc-theme-primary, 4%);
+$mdc-select-outlined-idle-border: rgba($mdc-theme-on-primary, .38);
+$mdc-select-outlined-hover-border: rgba($mdc-theme-on-primary, .87);
+
+.mdc-select {
+    --mdc-theme-primary: var(--secondary);
+}
+
+.mdc-select--focused .mdc-select__dropdown-icon {
+    background: url("data:image/svg+xml;charset=utf-8,%3Csvg width='10' height='5' viewBox='7 10 10 5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23fc6d26' fill-rule='evenodd' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat 50%;
+}
+
+/* Textfield */
+$mdc-text-field-fullwidth-bottom-line-color: rgba($mdc-theme-on-primary, .12);
+$mdc-text-field-disabled-border: rgba($mdc-theme-on-primary, .06);
+$mdc-text-field-disabled-icon: rgba($mdc-theme-on-primary, .3);
+$mdc-text-field-bottom-line-hover: rgba($mdc-theme-on-primary, .87);
+$mdc-text-field-bottom-line-idle: rgba($mdc-theme-on-primary, .42);
+$mdc-text-field-label: rgba($mdc-theme-on-primary, .6);
+
+$mdc-text-field-ink-color: rgba($mdc-theme-on-primary, .87);
+$mdc-text-field-helper-text-color: rgba($mdc-theme-on-primary, .6);
+$mdc-text-field-icon-color: rgba($mdc-theme-on-primary, .54);
+$mdc-text-field-focused-label-color: rgba($mdc-theme-secondary, .87);
+$mdc-text-field-placeholder-ink-color: rgba($mdc-theme-on-primary, .54);
+
+$mdc-text-field-disabled-label-color: rgba($mdc-theme-on-primary, .37);
+$mdc-text-field-disabled-ink-color: rgba($mdc-theme-on-primary, .37);
+$mdc-text-field-disabled-helper-text-color: rgba($mdc-theme-on-primary, .37);
+
+$mdc-text-field-background: mix($mdc-theme-on-primary, $mdc-theme-surface, 4%);
+$mdc-text-field-disabled-background: mix($mdc-theme-on-primary, $mdc-theme-surface, 2%);
+$mdc-text-field-secondary-text: rgba($mdc-theme-on-primary, .6);
+
+$mdc-text-field-outlined-idle-border: rgba($mdc-theme-on-primary, .38);
+$mdc-text-field-outlined-disabled-border: rgba($mdc-theme-on-primary, .06);
+$mdc-text-field-outlined-hover-border: rgba($mdc-theme-on-primary, .87);
+
+$mdc-textarea-border: rgba($mdc-theme-on-primary, .73);
+$mdc-textarea-background: rgba($mdc-theme-surface, 1);
+$mdc-textarea-disabled-border-color: rgba($mdc-theme-on-primary, .26);
+
 input, button, select, textarea {
     /* Fix svelte-material-ui input
        the border-bottom is not at the right place
     */
     margin: 0!important;
+}
+.mdc-line-ripple {
+    background-color: $mdc-theme-secondary!important;
+}
+.mdc-text-field__input,
+input {
+    --mdc-theme-primary: var(--secondary);
 }

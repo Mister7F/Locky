@@ -46,8 +46,8 @@ class Database:
             self.cursor.execute(
                 """
                 INSERT INTO accounts (name, login, password, icon, url,
-                                      totp, fields, folder, folder_id)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                      totp, fields, folder, folder_id, sequence)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     account.get("name", ""),
@@ -59,6 +59,7 @@ class Database:
                     json.dumps(account.get("fields", "")),
                     account.get("folder", False),
                     account.get("folder_id", 0),
+                    2 ** 60,
                 ],
             )
 
@@ -300,9 +301,8 @@ if __name__ == "__main__":
     database.move_account(3, 1)
 
     # test moving accounts
-    current_order = [account["id"] for account in database.open_folder(0)]
-
     database.move_account(3, 1)
+    current_order = [account["id"] for account in database.open_folder(0)]
 
     # check if order is stable
     for _ in range(100):

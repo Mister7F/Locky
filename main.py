@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import eel
 import apsw
@@ -46,6 +47,11 @@ def account_icons():
     )
 
 
+@app.route("/databases")
+def databases():
+    return json.dumps(sorted(os.listdir("./databases")))
+
+
 """
 API
 """
@@ -62,7 +68,7 @@ def handle_invalid_usage(error):
 @check_endpoint(check_login=False)
 def login():
     if session.get("login"):
-        return "ok"
+        return session["login"]
 
     login = request.json.get("login")
     password = request.json.get("password")
@@ -70,9 +76,12 @@ def login():
     if not login or not password:
         raise Error("Missing parameters")
 
+    if not re.match(r"^[a-zA-Z0-9.-_\ ]+$", login):
+        raise Error("Wrong character in the username")
+
     if login not in database_connections:
         try:
-            database = Database(password, "wallet.db")
+            database = Database(password, f"./databases/{login}")
             database.check_password()
         except apsw.NotADBError:
             raise Error("Wrong password")
@@ -81,7 +90,7 @@ def login():
         raise BadRequest("Wrong password")
 
     session["login"] = login
-    return "ok"
+    return login
 
 
 @app.route("/logout")
@@ -209,10 +218,10 @@ if __name__ == "__main__":
     key = None
     debug = "dev" in sys.argv
     for arg in sys.argv:
-        if arg.startswith('--cert'):
-            cert = arg.split('=')[1]
-        if arg.startswith('--key'):
-            key = arg.split('=')[1]
+        if arg.startswith("--cert"):
+            cert = arg.split("=")[1]
+        if arg.startswith("--key"):
+            key = arg.split("=")[1]
 
     if cert and key:
         app.run(debug=False, host="0.0.0.0", port=5002, ssl_context=(cert, key))

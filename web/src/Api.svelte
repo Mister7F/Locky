@@ -1,15 +1,19 @@
 <script context="module">
-
     function csrf_token() {
         // https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
-        return document.querySelector("meta[name='csrf-token']").getAttribute("content");
+        return document
+            .querySelector("meta[name='csrf-token']")
+            .getAttribute("content");
     }
 
-    export async function login(password) {
+    export async function login(username, password) {
         let response = await fetch("/login", {
             method: "post",
-            headers: { "Content-Type": "application/json", "CSRF-Token": csrf_token() },
-            body: JSON.stringify({ login: "admin", password: password }),
+            headers: {
+                "Content-Type": "application/json",
+                "CSRF-Token": csrf_token(),
+            },
+            body: JSON.stringify({ login: username, password: password }),
         });
 
         return response.ok;
@@ -21,7 +25,9 @@
     }
 
     export async function getAccounts(folderId) {
-        let response = await fetch("/open_folder?id=" + encodeURIComponent(folderId || 0));
+        let response = await fetch(
+            "/open_folder?id=" + encodeURIComponent(folderId || 0)
+        );
         if (!response.ok) {
             return null;
         }
@@ -31,7 +37,10 @@
     export async function updateAccount(account) {
         let response = await fetch("/save_account", {
             method: "post",
-            headers: { "Content-Type": "application/json", "CSRF-Token": csrf_token() },
+            headers: {
+                "Content-Type": "application/json",
+                "CSRF-Token": csrf_token(),
+            },
             body: JSON.stringify(account),
         });
 
@@ -42,9 +51,7 @@
     }
 
     export async function searchAccount(search) {
-        let response = await fetch(
-            "/search?q=" + encodeURIComponent(search)
-        );
+        let response = await fetch("/search?q=" + encodeURIComponent(search));
         if (response.ok) {
             return await response.json();
         }
@@ -54,7 +61,10 @@
     export async function moveAccountUp(account_id) {
         let response = await fetch("/move_up", {
             method: "post",
-            headers: { "Content-Type": "application/json", "CSRF-Token": csrf_token() },
+            headers: {
+                "Content-Type": "application/json",
+                "CSRF-Token": csrf_token(),
+            },
             body: JSON.stringify({ account_id: account_id }),
         });
 
@@ -64,7 +74,10 @@
     export async function moveAccountInFolder(detail) {
         let response = await fetch("/move_account", {
             method: "post",
-            headers: { "Content-Type": "application/json", "CSRF-Token": csrf_token() },
+            headers: {
+                "Content-Type": "application/json",
+                "CSRF-Token": csrf_token(),
+            },
             body: JSON.stringify({
                 account_id: detail.fromItem.id,
                 new_index: detail.to,
@@ -90,7 +103,10 @@
     export async function updatePassword(oldPassword, newPassword) {
         let response = await fetch("/change_password", {
             method: "post",
-            headers: { "Content-Type": "application/json", "CSRF-Token": csrf_token() },
+            headers: {
+                "Content-Type": "application/json",
+                "CSRF-Token": csrf_token(),
+            },
             body: JSON.stringify({
                 old_password: oldPassword,
                 new_password: newPassword,
@@ -100,5 +116,11 @@
         return response.ok;
     }
 
-
+    export async function getDatabasesName() {
+        let response = await fetch("/databases");
+        if (response.ok) {
+            return await response.json();
+        }
+        return false;
+    }
 </script>
