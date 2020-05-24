@@ -78,7 +78,9 @@ The accounts are stored in a SQLite encrypted database
     - reverse navigation
     - show copy notification in the account editor
     - theme component with sass variable
-    - show database name
+    - compute password strength
+    - show password strength only on creation
+    - rename `moveFolder` -> `onMoveFolder` to solve conflict with `API.svelte` functions
 - Backend
     - G-Drive sync
     - `database.py`, optimize `move_account` to drop the column `sequence_tmp`
@@ -87,6 +89,7 @@ The accounts are stored in a SQLite encrypted database
     - close the process when the window is closed
 - Security
     - HMAC database
+    - update security test for new route
 - Other
     - Build binary
     - Clean the all code
@@ -103,5 +106,7 @@ The accounts are stored in a SQLite encrypted database
     - ctrl C
     - ctrl V
     - escape to close form
-- List view with folders on the left side
-
+- Store file
+- View old passwords
+- Statistics on the accounts
+- Store setting in local storage instead of cookies

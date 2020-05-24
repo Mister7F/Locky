@@ -11,7 +11,7 @@
     const dispatch = createEventDispatcher();
 
     const maxLen = 8;
-    let username = "";
+    export let username = "";
     let password = "";
     let create = false;
 
@@ -167,10 +167,10 @@
     </svg>
     <div class="fields">
         {#if databases}
-        <FormField>
-            <Switch bind:checked={create} />
-            <span slot="label">Create a new wallet</span>
-        </FormField>
+            <FormField>
+                <Switch bind:checked={create} />
+                <span slot="label">Create a new wallet</span>
+            </FormField>
         {/if}
 
         {#if databases && !create}

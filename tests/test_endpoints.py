@@ -79,7 +79,6 @@ def test_api_endpoint():
                 "dest_account_id": 1,
             },
         },
-        {"endpoint": "move_up", "json": {"account_id": 1}},
         {"endpoint": "open_folder", "method": "get", "csrf": False},
         {"endpoint": "account/1", "method": "get", "csrf": False},
         {"endpoint": "search?q=g", "method": "get", "csrf": False},
@@ -87,6 +86,8 @@ def test_api_endpoint():
             "endpoint": "change_password",
             "json": {"old_password": PASSWORD, "new_password": PASSWORD,},
         },
+        {"endpoint": "get_folders", "method": "get", "csrf": False},
+        {"endpoint": "get_folders", "method": "get", "csrf": False},
     ]
 
     for test_request in test_requests:

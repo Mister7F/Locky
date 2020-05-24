@@ -4,6 +4,7 @@
     import { getCookie } from "./Helper.svelte";
     import { logout } from "./Api.svelte";
 
+    let username = "";
     let wallet = [];
     let locked = true;
     let walletElement;
@@ -109,8 +110,12 @@
 
 <div class="root">
     {#if locked}
-        <LockScreen on:open_wallet={openWallet} />
+        <LockScreen on:open_wallet={openWallet} bind:username />
     {:else}
-        <Wallet {wallet} on:lock={lock} bind:this={walletElement} />
+        <Wallet
+            bind:wallet
+            on:lock={lock}
+            bind:this={walletElement}
+            bind:username />
     {/if}
 </div>

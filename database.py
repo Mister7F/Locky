@@ -12,6 +12,7 @@ class Database:
         self.conn = Connection(filename, password)
         self.cursor = self.conn.cursor()
         self._create_table()
+        self.clean_database()
 
     def _create_table(self):
         with self.conn:
@@ -26,9 +27,18 @@ class Database:
                       url VARCHAR DEFAULT '',
                       totp VARCHAR DEFAULT '',
                       fields TEXT DEFAULT '[]',
-                      folder BOOLEAN DEFAULT false,
                       sequence REAL DEFAULT 0,
                       folder_id INTEGER DEFAULT 0
+                    )
+                """
+            )
+            self.cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS folders (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      name VARCHAR,
+                      icon VARCHAR,
+                      sequence REAL DEFAULT 0
                     )
                 """
             )
@@ -46,8 +56,8 @@ class Database:
             self.cursor.execute(
                 """
                 INSERT INTO accounts (name, login, password, icon, url,
-                                      totp, fields, folder, folder_id, sequence)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                      totp, fields, folder_id, sequence)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     account.get("name", ""),
@@ -57,7 +67,6 @@ class Database:
                     account.get("url", ""),
                     account.get("totp", ""),
                     json.dumps(account.get("fields", "")),
-                    account.get("folder", False),
                     account.get("folder_id", 0),
                     2 ** 60,
                 ],
@@ -80,7 +89,6 @@ class Database:
                            url = ?,
                            totp = ?,
                            fields = ?,
-                           folder = ?,
                            folder_id = ?
                     WHERE id = ?
                     """,
@@ -92,7 +100,6 @@ class Database:
                     account.get("url", ""),
                     account.get("totp", ""),
                     json.dumps(account.get("fields", "")),
-                    account.get("folder", False),
                     account.get("folder_id", 0),
                     account["id"],
                 ],
@@ -108,7 +115,7 @@ class Database:
         self.cursor.execute(
             """
             SELECT id, name, login, password, icon, url,
-                   totp, fields, folder, folder_id, sequence
+                   totp, fields, folder_id, sequence
               FROM accounts
              WHERE name LIKE '%' || ? || '%'
                 OR login LIKE '%' || ? || '%'
@@ -124,7 +131,7 @@ class Database:
         self.cursor.execute(
             """
             SELECT id, name, login, password, icon, url, totp,
-                   fields, folder, folder_id, sequence
+                   fields, folder_id, sequence
               FROM accounts
              WHERE id = ?
             """,
@@ -137,17 +144,126 @@ class Database:
         self.cursor.execute(
             """
             SELECT id, name, login, password, icon, url, totp,
-                   fields, folder, folder_id, sequence
+                   fields, folder_id, sequence
               FROM accounts
-             WHERE folder_id = ?
-          ORDER BY sequence ASC
+             WHERE (folder_id = ? OR ? = 0)
+          ORDER BY folder_id DESC, sequence ASC
             """,
-            [folder_id],
+            [folder_id, folder_id],
         )
 
         return [
             self._sql_response_to_dict(response) for response in self.cursor.fetchall()
         ]
+
+    def get_folders(self):
+        self.cursor.execute(
+            """
+            SELECT id, name, icon, sequence
+              FROM folders
+          ORDER BY sequence ASC
+            """
+        )
+
+        return [
+            self._sql_folder_to_dict(response) for response in self.cursor.fetchall()
+        ]
+
+    def get_folder(self, folder_id):
+        self.cursor.execute(
+            """
+            SELECT id, name, icon, sequence
+              FROM folders
+             WHERE id = ?
+          ORDER BY sequence ASC
+            """,
+            [folder_id],
+        )
+
+        return self._sql_folder_to_dict(self.cursor.fetchone())
+
+    def add_folder(self, folder):
+        with self.conn:
+            self.cursor.execute(
+                """
+                INSERT INTO folders (name, icon, sequence)
+                     VALUES (?, ?, ?)
+                """,
+                [folder.get("name", ""), folder.get("icon", ""), 2 ** 60,],
+            )
+
+            self.cursor.execute("SELECT last_insert_rowid()")
+            folder_id = self.cursor.fetchone()[0]
+            return self.get_folder(folder_id)
+
+    def write_folder(self, folder):
+        assert "id" in folder
+        with self.conn:
+            self.cursor.execute(
+                """
+                    UPDATE folders
+                       SET name = ?,
+                           icon = ?
+                     WHERE id = ?
+                    """,
+                [folder.get("name", ""), folder.get("icon", ""), folder["id"],],
+            )
+
+        return folder
+
+    def move_folder(self, folder_id, new_index):
+        # Todo: write unit test
+        with self.conn:
+            self.cursor.execute(
+                """
+                SELECT (CASE
+                           WHEN id != ? THEN (
+                                SELECT COUNT(*)
+                                  FROM folders as f
+                                 WHERE (
+                                    -- Use the id to sort accounts with the same sequence
+                                          (0.00000001 * f.id + f.sequence)
+                                        < (0.00000001 * folders.id + folders.sequence)
+                                       )
+                                   AND f.id != ?
+                                   AND f.id != folders.id
+                           )
+                           ELSE (? - 0.5)
+                       END) as new_sequence, id
+                  FROM folders
+                """,
+                [folder_id, folder_id, new_index],
+            )
+
+            results = self.cursor.fetchall()
+
+            self.cursor.executemany(
+                """
+                UPDATE folders
+                   SET sequence = ?
+                 WHERE id = ?
+                """,
+                results,
+            )
+
+    def delete_folder(self, folder_id):
+        # Todo: write unit test
+        with self.conn:
+            self.cursor.execute(
+                """
+                DELETE FROM folders WHERE id = ?
+                """,
+                [folder_id],
+            )
+
+            self.cursor.execute(
+                """
+                UPDATE accounts
+                   SET folder_id = 0
+                 WHERE folder_id = ?
+                """,
+                [folder_id],
+            )
 
     def account_count(self):
         self.cursor.execute(
@@ -233,14 +349,23 @@ class Database:
         self.conn.change_password(new_password)
         self.cursor = self.conn.cursor()
 
-    def clean_accounts(self):
+    def clean_database(self):
         """Clean the database.
 
         Do multiple actions
         - Move all accounts without parent to the root folder
         - If a "loop" is present, move all accounts of the loop to the root
         """
-        pass
+
+        with self.conn:
+            # move all accounts without existing folder to the root directory
+            self.cursor.execute(
+                """
+                UPDATE accounts
+                   SET folder_id = 0
+                 WHERE folder_id NOT IN (SELECT id FROM folders)
+                """
+            )
 
     def _sql_response_to_dict(self, response):
         if not response:
@@ -254,9 +379,18 @@ class Database:
             "url": response[5],
             "totp": response[6],
             "fields": json.loads(response[7] or "[]"),
-            "folder": response[8],
-            "folder_id": response[9],
-            "sequence": response[10],
+            "folder_id": response[8],
+            "sequence": response[9],
+        }
+
+    def _sql_folder_to_dict(self, response):
+        if not response:
+            return {}
+        return {
+            "id": response[0],
+            "name": response[1],
+            "icon": response[2],
+            "sequence": response[3],
         }
 
     def _check_json_account(self, account):

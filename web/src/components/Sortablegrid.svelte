@@ -4,10 +4,17 @@
 
     export let items;
     export let dragging = false;
+    // if false, can not move the items in the list
+    export let movable = true;
+
+    let className = "";
+    export { className as class };
+
+    // dictionary {dom_id: js_callaback}
+    // when an item is dropped on the specified DOM id, the JS callback is call
+    export let customActions = [];
 
     const dispatch = createEventDispatcher();
-
-    let actionsSlot;
 
     function getElementIndex(element) {
         // Return the index of the elemnt in its parent
@@ -27,6 +34,7 @@
     let destIndex = -1;
     let action = null;
     let intoFolder = false;
+    let gridElement;
 
     let ghostElement = null;
 
@@ -38,13 +46,43 @@
 
     let mobile = false;
 
+    function moveDraggedElement(event) {
+        // move the dragged element to the mouse position
+        if (event.touches) {
+            // mobile
+            var mouseX = event.touches[0].clientX;
+            var mouseY = event.touches[0].clientY;
+        } else if (!mobile) {
+            // desktop
+            var mouseX = event.x;
+            var mouseY = event.y;
+        } else {
+            // mouse move event on mobile
+            // must ignore
+            return;
+        }
+
+        draggedElement.classList.add("dragged");
+        draggedElement.style.setProperty("--x", mouseX - xPosElement + "px");
+        draggedElement.style.setProperty("--y", mouseY - yPosElement + "px");
+
+        return [mouseX, mouseY];
+    }
+
     function mouseDown(event) {
         if (event.button !== 0 && !event.touches) {
             return;
         }
+
         let target = event.currentTarget;
 
         mouseTimer = setTimeout(() => {
+            if (!movable) {
+                // try to move, but can't
+                dispatch("move_blocked");
+                return;
+            }
+
             dragging = true;
 
             draggedElement = target;
@@ -59,21 +97,11 @@
                 // desktop
                 xPosElement = event.x - draggedElement.offsetLeft;
                 yPosElement =
-                    event.y -
-                    draggedElement.offsetTop +
-                    document.querySelector(".grid").scrollTop;
+                    event.y - draggedElement.getBoundingClientRect().top;
                 mobile = false;
             }
 
-            // move the element in absolute position
-            let x = draggedElement.offsetLeft;
-            let y =
-                draggedElement.offsetTop -
-                document.querySelector(".grid").scrollTop;
-
-            draggedElement.classList.add("dragged");
-            draggedElement.style.setProperty("--x", x + "px");
-            draggedElement.style.setProperty("--y", y + "px");
+            moveDraggedElement(event);
 
             // create a ghost element to fill the space
             ghostElement = document.createElement("div");
@@ -142,7 +170,7 @@
         dragging = false;
         action = null;
         intoFolder = false;
-        let previousFolder = document.querySelector(".move_into");
+        let previousFolder = gridElement.querySelector(".move_into");
         if (previousFolder) {
             previousFolder.classList.remove("move_into");
         }
@@ -157,43 +185,34 @@
             return;
         }
 
-        // move the dragged element to the mouse position
-        if (event.touches) {
-            // mobile
-            var mouseX = event.touches[0].clientX;
-            var mouseY = event.touches[0].clientY;
-        } else if (!mobile) {
-            // desktop
-            var mouseX = event.x;
-            var mouseY = event.y;
-        } else {
-            // mouse move event on mobile
-            // must ignore
-            return;
-        }
-
-        draggedElement.style.setProperty("--x", mouseX - xPosElement + "px");
-        draggedElement.style.setProperty("--y", mouseY - yPosElement + "px");
+        let [mouseX, mouseY] = moveDraggedElement(event);
 
         // move the ghost element if necessary
         let hoverElements = document.elementsFromPoint(mouseX, mouseY);
 
-        // check if will perform an action
-        let actionElement = hoverElements.filter(
-            (el) =>
-                el.parentNode &&
-                el.parentNode.getAttribute &&
-                el.parentNode.getAttribute("slot") === "actions"
+        /* Check for custom actions */
+        let customActionElement = hoverElements.filter(
+            (el) => customActions.indexOf(el.id) >= 0
         );
+        if (customActionElement.length) {
+            action = customActionElement[0];
 
-        if (actionElement.length) {
-            action = actionElement[0];
+            // Todo: rename `move_into` into `action_hover`
+            let previousFolder = document.querySelector(".move_into");
+            if (previousFolder) {
+                previousFolder.classList.remove("move_into");
+            }
+            action.classList.add("move_into");
             return;
         }
 
+        // no action
+        action = null;
+
         // check if will move the item
-        let destItemsFiltered = hoverElements.filter((el) =>
-            el.classList.contains("container")
+        let destItemsFiltered = hoverElements.filter(
+            (el) =>
+                el.classList.contains("container") && gridElement.contains(el)
         );
         destItemsFiltered = destItemsFiltered.filter(
             (el) => el !== draggedElement
@@ -278,6 +297,7 @@
         top: var(--y);
         opacity: 0.2;
         transform: rotate(-3deg);
+        z-index: 99;
     }
 
     :global(.dragged),
@@ -297,12 +317,11 @@
     }
 </style>
 
-<div class="grid" oncontextmenu="return false;">
-    <div class="actions" bind:this={actionsSlot}>
-        <slot name="actions">
-            <!-- Actions when items are dropped on the elements -->
-        </slot>
-    </div>
+<div
+    class="grid {className}
+    {dragging ? 'dragging' : ''}"
+    oncontextmenu="return false;"
+    bind:this={gridElement}>
     <div class="items">
         {#each items as item, index (item)}
             <div

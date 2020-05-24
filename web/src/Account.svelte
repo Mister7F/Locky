@@ -15,14 +15,6 @@
     const dispatch = createEventDispatcher();
     export let account;
     export let viewMode = "detail";
-
-    let editingFolder = false;
-    let editFolderNameElement;
-
-    function saveFolder() {
-        editingFolder = false;
-        dispatch("save_folder", account);
-    }
 </script>
 
 <style>
@@ -109,7 +101,7 @@
 
     /* Detail mode */
     .detail-card {
-        margin: 0;
+        margin: 10px;
         color: var(--on-surface);
         width: 280px;
         height: 170px;
@@ -122,10 +114,6 @@
         flex-direction: row;
         justify-content: flex-start;
         align-items: center;
-    }
-    .folder :global(.detail_primary_action) {
-        height: 145px;
-        border: 0;
     }
     .detail_img {
         min-height: 70px;
@@ -176,16 +164,12 @@
                 <h5>{account.name}</h5>
             </div>
         </div>
-        {#if !account.folder}
-            <div class="strength" style="--force: {account.force || 0}" />
-        {/if}
+        <div class="strength" style="--force: {account.force || 0}" />
     </div>
 {:else}
-    <div class="detail-card {account.folder ? 'folder' : ''}">
+    <div class="detail-card">
         <Card>
-            {#if !account.folder}
-                <div class="strength" style="--force: {account.force || 0}" />
-            {/if}
+            <div class="strength" style="--force: {account.force || 0}" />
             <PrimaryAction
                 class="detail_primary_action"
                 on:click={() => dispatch('click')}>
@@ -197,56 +181,54 @@
                     <div class="detail_login">{account.login}</div>
                 </div>
             </PrimaryAction>
-            {#if !account.folder}
-                <Actions class="detail_account_actions">
-                    <ActionButtons>
-                        {#if account.url && account.url.startsWith('http')}
-                            <IconButton
-                                class="material-icons"
-                                title="Open URL"
-                                href={account.url}
-                                target="_blank">
-                                launch
-                            </IconButton>
-                        {/if}
-                    </ActionButtons>
-                    <ActionIcons>
-                        {#if account.login}
-                            <IconButton
-                                class="material-icons"
-                                on:click={() => {
-                                    dispatch('notify', 'Login copied');
-                                    copyValue(account.login);
-                                }}
-                                title="More options">
-                                alternate_email
-                            </IconButton>
-                        {/if}
-                        {#if account.password}
-                            <IconButton
-                                class="material-icons"
-                                on:click={() => {
-                                    dispatch('notify', 'Password copied');
-                                    copyValue(account.password);
-                                }}
-                                title="Share">
-                                vpn_key
-                            </IconButton>
-                        {/if}
-                        {#if account.totp}
-                            <IconButton
-                                class="material-icons"
-                                on:click={async () => {
-                                    dispatch('notify', '2FA copied');
-                                    copyValue((await getTotpCode(account.totp)).replace(' ', ''));
-                                }}
-                                title="Share">
-                                schedule
-                            </IconButton>
-                        {/if}
-                    </ActionIcons>
-                </Actions>
-            {/if}
+            <Actions class="detail_account_actions">
+                <ActionButtons>
+                    {#if account.url && account.url.startsWith('http')}
+                        <IconButton
+                            class="material-icons"
+                            title="Open URL"
+                            href={account.url}
+                            target="_blank">
+                            launch
+                        </IconButton>
+                    {/if}
+                </ActionButtons>
+                <ActionIcons>
+                    {#if account.login}
+                        <IconButton
+                            class="material-icons"
+                            on:click={() => {
+                                dispatch('notify', 'Login copied');
+                                copyValue(account.login);
+                            }}
+                            title="More options">
+                            alternate_email
+                        </IconButton>
+                    {/if}
+                    {#if account.password}
+                        <IconButton
+                            class="material-icons"
+                            on:click={() => {
+                                dispatch('notify', 'Password copied');
+                                copyValue(account.password);
+                            }}
+                            title="Share">
+                            vpn_key
+                        </IconButton>
+                    {/if}
+                    {#if account.totp}
+                        <IconButton
+                            class="material-icons"
+                            on:click={async () => {
+                                dispatch('notify', '2FA copied');
+                                copyValue((await getTotpCode(account.totp)).replace(' ', ''));
+                            }}
+                            title="Share">
+                            schedule
+                        </IconButton>
+                    {/if}
+                </ActionIcons>
+            </Actions>
         </Card>
     </div>
 {/if}

@@ -107,3 +107,17 @@ input, button, select, textarea {
 input {
     --mdc-theme-primary: var(--secondary);
 }
+
+/* List */
+.mdc-list-group__subheader,
+.mdc-list-item__text  {
+    color: var(--on-surface);
+}
+.mdc-list-group__subheader  {
+    font-weight: bold;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+

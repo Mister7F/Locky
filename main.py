@@ -115,6 +115,21 @@ def save_account():
     return json.dumps(account)
 
 
+@app.route("/save_folder", methods=["POST"])
+@check_endpoint()
+def save_folder():
+    folder = request.json
+    if not folder:
+        raise Error("Invalid request")
+
+    if "id" not in folder:
+        folder = database_connections[session["login"]].add_folder(folder)
+    else:
+        folder = database_connections[session["login"]].write_folder(folder)
+
+    return json.dumps(folder)
+
+
 @app.route("/remove_account", methods=["POST"])
 @check_endpoint()
 def remove_account():
@@ -146,16 +161,21 @@ def move_account():
     return "ok"
 
 
-@app.route("/move_up", methods=["POST"])
+@app.route("/move_folder", methods=["POST"])
 @check_endpoint()
-def move_up():
-    account_id = int(request.json.get("account_id"))
+def move_folder():
+    folder_id = int(request.json.get("folder_id"))
+    new_index = int(request.json.get("new_index"))
 
-    database = database_connections[session["login"]]
-    account = database.get_account(account_id)
-    folder = database.get_account(account["folder_id"])
-    database.move_into_folder(account_id, folder.get("folder_id", 0))
+    database_connections[session["login"]].move_folder(folder_id, new_index)
+    return "ok"
 
+
+@app.route("/delete_folder", methods=["POST"])
+@check_endpoint()
+def delete_folder():
+    folder_id = int(request.json.get("folder_id"))
+    database_connections[session["login"]].delete_folder(folder_id)
     return "ok"
 
 
@@ -164,6 +184,13 @@ def move_up():
 def open_folder():
     folder_id = int(request.args.get("id", 0))
     return json.dumps(database_connections[session["login"]].open_folder(folder_id))
+
+
+@app.route("/get_folders", methods=["GET"])
+@check_endpoint(only_json=False, check_csrf_token=False)
+def get_folders():
+    folders = database_connections[session["login"]].get_folders()
+    return json.dumps([{"id": 0, "name": "All", "icon": "home"}] + folders)
 
 
 @app.route("/account/<int:account_id>", methods=["GET"])

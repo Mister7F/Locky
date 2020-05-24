@@ -115,29 +115,6 @@
     .field {
         color: var(--on-primary);
     }
-
-    /*
-    .field :global(input),
-    .field :global(.mdc-text-field-helper-text),
-    .field :global(.mdc-floating-label) {
-        color: var(--on-primary) !important;
-    }
-
-    .field :global(.mdc-text-field--focused input) {
-        caret-color: var(--secondary) !important;
-    }
-    .field :global(.mdc-text-field--focused .mdc-floating-label) {
-        color: var(--secondary) !important;
-    }
-
-    .field :global(.mdc-text-field__input) {
-        border-bottom-color: var(--on-primary) !important;
-    }
-
-    .field :global(.mdc-line-ripple) {
-        background-color: var(--secondary) !important;
-    }
-    */
 </style>
 
 {#if value || !readonly}

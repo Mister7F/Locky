@@ -13,6 +13,8 @@
     const dispatch = createEventDispatcher();
 
     export let viewMode = "detail";
+    export let floatingFolder;
+    export let username = "";
 
     let searchField;
     let searchText = "";
@@ -58,9 +60,14 @@
 </script>
 
 <style>
+    h1 {
+        color: var(--on-primary);
+        font-size: 20px;
+    }
     :global(.header .field) {
         margin-top: -20px;
         width: 100%;
+        z-index: 10;
     }
 
     :global(.header .menu_navbar) {
@@ -83,11 +90,14 @@
 <TopAppBar fixed color="primary" class="header">
     <Row>
         <Section>
-            <IconButton
-                class="material-icons"
-                on:click={() => dispatch('go_back')}>
-                arrow_back
-            </IconButton>
+            {#if floatingFolder}
+                <IconButton
+                    class="material-icons"
+                    on:click={() => dispatch('show_folders')}>
+                    menu
+                </IconButton>
+            {/if}
+            <h1>{username}</h1>
         </Section>
         <Section align="end">
             <IconButton
@@ -123,15 +133,6 @@
             {#if openMore}
                 <Menu static class="menu_navbar">
                     <List>
-                        <Item>
-                            <Icon
-                                class="material-icons"
-                                color="surface"
-                                on:click={() => dispatch('new_folder')}
-                                title="Create a new folder">
-                                create_new_folder
-                            </Icon>
-                        </Item>
                         <Item>
                             <Icon
                                 color="surface"

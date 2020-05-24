@@ -16,7 +16,11 @@
             body: JSON.stringify({ login: username, password: password }),
         });
 
-        return response.ok;
+        if (response.ok) {
+            return await response.text();
+        }
+
+        return false;
     }
 
     export async function logout() {
@@ -34,7 +38,58 @@
         return await response.json();
     }
 
-    export async function updateAccount(account) {
+    export async function getFolders() {
+        let response = await fetch("/get_folders");
+        if (!response.ok) {
+            return null;
+        }
+        return await response.json();
+    }
+
+    export async function moveFolder(folder_id, new_index) {
+        let response = await fetch("/move_folder", {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json",
+                "CSRF-Token": csrf_token(),
+            },
+            body: JSON.stringify({
+                folder_id: folder_id,
+                new_index: new_index,
+            }),
+        });
+        return response.ok;
+    }
+
+    export async function deleteFolder(folder_id) {
+        let response = await fetch("/delete_folder", {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json",
+                "CSRF-Token": csrf_token(),
+            },
+            body: JSON.stringify({ folder_id: folder_id }),
+        });
+        return response.ok;
+    }
+
+    export async function saveFolder(folder) {
+        let response = await fetch("/save_folder", {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json",
+                "CSRF-Token": csrf_token(),
+            },
+            body: JSON.stringify(folder),
+        });
+
+        if (response.ok) {
+            return await response.json();
+        }
+        return false;
+    }
+
+    export async function saveAccount(account) {
         let response = await fetch("/save_account", {
             method: "post",
             headers: {
@@ -58,19 +113,6 @@
         return false;
     }
 
-    export async function moveAccountUp(account_id) {
-        let response = await fetch("/move_up", {
-            method: "post",
-            headers: {
-                "Content-Type": "application/json",
-                "CSRF-Token": csrf_token(),
-            },
-            body: JSON.stringify({ account_id: account_id }),
-        });
-
-        return response.ok;
-    }
-
     export async function moveAccountInFolder(detail) {
         let response = await fetch("/move_account", {
             method: "post",
@@ -78,12 +120,7 @@
                 "Content-Type": "application/json",
                 "CSRF-Token": csrf_token(),
             },
-            body: JSON.stringify({
-                account_id: detail.fromItem.id,
-                new_index: detail.to,
-                into_folder: detail.intoFolder,
-                dest_account_id: detail.destItem.id,
-            }),
+            body: JSON.stringify(detail),
         });
 
         return response.ok;
