@@ -65,8 +65,8 @@ Android,
 Python has been used for the backend with `Flask` and `Svelte` for the frontend (with `svelte-material-ui` for the components).
 
 The accounts are stored in a SQLite encrypted database
-- AES 256 bits
-- CBC mode
+- AES 256 bits in CBC mode
+- HMAC-SHA256 for the data signature
 - scrypt as key derivation algorithm
 
 # Todo
@@ -82,8 +82,8 @@ The accounts are stored in a SQLite encrypted database
     - `database.py`, optimize `move_account` to drop the column `sequence_tmp`
     - close the process when the window is closed
 - Security
-    - HMAC database
     - update security test for new route
+    - just store key, no more hash or password
 - Other
     - Build binary
     - Clean the all code

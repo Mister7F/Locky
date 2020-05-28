@@ -8,8 +8,8 @@ class Database:
     def __init__(self, password, filename=":memory:"):
         self.hash_salt = os.urandom(32)
         self.hash_password = self._hash(password)
-
         self.conn = Connection(filename, password)
+
         self.cursor = self.conn.cursor()
         self._create_table()
         self.clean_database()

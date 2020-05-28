@@ -1,54 +1,61 @@
 import os
 import apsw
-import functools
 
 
-from hashlib import md5
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import scrypt
+from Crypto.Hash import HMAC, SHA256
+
+# PASSWORD SALT (16)
+HEADER_SIZE = 16
+# IV (16) | MAC (32) | CIPHERTEXT
+BLOCK_HEADER_SIZE = 16 + 32
+BLOCK_SIZE = 4096 + BLOCK_HEADER_SIZE
 
 
-BLOCK_SIZE = 4096
-HEADER_SIZE = 32
-
-
-@functools.lru_cache(maxsize=2048)
-def _get_iv(offset: int, salt: bytes) -> bytes:
-    """Generate an IV for the block."""
-    assert salt, "Salt is required"
-
-    block_position = offset // BLOCK_SIZE
-    return md5(salt + block_position.to_bytes(16, "big")).digest()
+class WrongSignature(Exception):
+    pass
 
 
 def _parse_header(file):
     file.seek(0)
-    header = file.read(HEADER_SIZE)
-    if header:
-        password_salt = header[:16]
-        ivs_salt = header[16:32]
-        return password_salt, ivs_salt
+    password_salt = file.read(HEADER_SIZE)
+    return password_salt
 
 
-def _decrypt(key: bytes, iv: bytes, data: bytes) -> bytearray:
+def _decrypt(key: bytes, data: bytes) -> bytearray:
     assert len(key) == 32, "Must decrypt in AES-256"
-    assert len(iv) == 16
     assert len(data) == BLOCK_SIZE
+    iv = data[:16]
+    mac = data[16:48]
+    ciphertext = data[BLOCK_HEADER_SIZE:]
 
-    return bytearray(AES.new(key, AES.MODE_CBC, IV=iv).decrypt(data))
+    plaintext = AES.new(key, AES.MODE_CBC, iv=iv).decrypt(ciphertext)
+    if mac != HMAC.new(key, msg=plaintext, digestmod=SHA256).digest():
+        return b""
+
+    assert len(plaintext) == BLOCK_SIZE - BLOCK_HEADER_SIZE
+    return bytearray(plaintext)
 
 
-def _encrypt(key: bytes, iv: bytes, data: bytes) -> bytearray:
+def _encrypt(key: bytes, plaintext: bytes) -> bytearray:
     assert len(key) == 32, "Must encrypt in AES-256"
-    assert len(iv) == 16
-    assert len(data) == BLOCK_SIZE
+    assert len(plaintext) == BLOCK_SIZE - BLOCK_HEADER_SIZE
 
-    return bytearray(AES.new(key, AES.MODE_CBC, IV=iv).encrypt(data))
+    iv = os.urandom(16)
+    mac = HMAC.new(key, msg=plaintext, digestmod=SHA256).digest()
+
+    ciphertext = AES.new(key, AES.MODE_CBC, iv=iv).encrypt(plaintext)
+
+    assert len(ciphertext) == BLOCK_SIZE - BLOCK_HEADER_SIZE
+    assert len(iv + mac) == BLOCK_HEADER_SIZE
+
+    return bytearray(iv + mac + ciphertext)
 
 
 def _derive_password(password: str, salt: bytes) -> bytes:
     """Generate the AES key from the master password."""
-    return scrypt(password, salt=salt, key_len=32, N=2 ** 12, r=8, p=1)
+    return scrypt(password, salt=salt, key_len=32, N=2 ** 15, r=8, p=1)
 
 
 def _decrypt_database(password: str, filename: str) -> bytes:
@@ -58,7 +65,7 @@ def _decrypt_database(password: str, filename: str) -> bytes:
     database is the same as the not-encrypted one.
     """
     with open(filename, "rb") as file:
-        password_salt, ivs_salt = _parse_header(file)
+        password_salt = _parse_header(file)
         key = _derive_password(password, password_salt)
 
         file.seek(HEADER_SIZE)
@@ -66,27 +73,31 @@ def _decrypt_database(password: str, filename: str) -> bytes:
 
         plaindata = b""
         for i in range(0, len(data), BLOCK_SIZE):
-            plaindata += _decrypt(key, _get_iv(i, ivs_salt), data[i : i + BLOCK_SIZE])
+            plaindata += _decrypt(key, data[i : i + BLOCK_SIZE])
 
     return plaindata
 
 
 class EncryptedVFSFile(apsw.VFSFile):
-    def __init__(self, key: bytes, ivs_salt: bytes, *args):
+    def __init__(self, key: bytes, *args):
         """Encrypt the data when writing on the disk and decrypt when reading.
 
         :param key: AES key used for encryption/decryption
-        :param ivs_salt: Salt used to generate the IV of each block
         """
         assert len(key) == 32
-        assert len(ivs_salt) == 16
 
         self.key = key
-        self.ivs_salt = ivs_salt
-        return super().__init__(*args)
+        super().__init__(*args)
+
+        # check that the SQLite page size match with the encryption block size
+        sector_size = self.xSectorSize()
+        assert sector_size <= BLOCK_SIZE - BLOCK_HEADER_SIZE
+        assert not (BLOCK_SIZE - BLOCK_HEADER_SIZE) % sector_size
 
     def xRead(self, amount: int, offset: int) -> bytes:
         assert amount <= BLOCK_SIZE
+
+        offset += (offset // (BLOCK_SIZE - BLOCK_HEADER_SIZE)) * BLOCK_HEADER_SIZE
 
         start_block_offset = offset - (offset % BLOCK_SIZE)
         end_offset = offset + amount
@@ -101,39 +112,45 @@ class EncryptedVFSFile(apsw.VFSFile):
         if not data:
             return data
 
-        data = _decrypt(self.key, _get_iv(offset, self.ivs_salt), data)
+        data = _decrypt(self.key, data)
         return data[offset % BLOCK_SIZE : offset % BLOCK_SIZE + amount]
 
     def xWrite(self, data: bytes, offset: int):
+        offset += (offset // (BLOCK_SIZE - BLOCK_HEADER_SIZE)) * BLOCK_HEADER_SIZE
+
         start_block_offset = offset - (offset % BLOCK_SIZE)
 
         assert not start_block_offset % BLOCK_SIZE
 
-        if (offset + len(data)) > (start_block_offset + BLOCK_SIZE):
-            end_data_pos = (start_block_offset + BLOCK_SIZE) - offset
+        if (offset + len(data)) > (start_block_offset + BLOCK_SIZE - BLOCK_HEADER_SIZE):
+            end_data_pos = (
+                start_block_offset + BLOCK_SIZE - BLOCK_HEADER_SIZE
+            ) - offset
             self.xWrite(data[:end_data_pos], start_block_offset + BLOCK_SIZE)
             data = data[:end_data_pos]
 
         assert offset + len(data) <= start_block_offset + BLOCK_SIZE
 
-        iv = _get_iv(offset, self.ivs_salt)
-
         # the data doesn't fill into blocks
         # so we need to read the entire block to add data
         blocks_data = super().xRead(BLOCK_SIZE, start_block_offset + HEADER_SIZE)
 
-        if len(blocks_data) != BLOCK_SIZE:
-            # we add new block at the end of the file
-            blocks_data += os.urandom(BLOCK_SIZE - len(blocks_data))
+        assert len(blocks_data) in [0, BLOCK_SIZE]
 
-        blocks_data = _decrypt(self.key, iv, blocks_data)
+        if not len(blocks_data):
+            # we add new block at the end of the file
+            blocks_data = bytearray(os.urandom(BLOCK_SIZE - BLOCK_HEADER_SIZE))
+        else:
+            blocks_data = _decrypt(self.key, blocks_data)
+
         blocks_data[offset % BLOCK_SIZE : offset % BLOCK_SIZE + len(data)] = data
-        blocks_data = _encrypt(self.key, iv, blocks_data)
+        blocks_data = _encrypt(self.key, blocks_data)
 
         super().xWrite(blocks_data, start_block_offset + HEADER_SIZE)
 
     def xFileSize(self) -> int:
-        return super().xFileSize() - HEADER_SIZE
+        file_size = super().xFileSize()
+        return file_size - HEADER_SIZE - (file_size // BLOCK_SIZE) - BLOCK_HEADER_SIZE
 
 
 class EncryptedVFS(apsw.VFS):
@@ -146,41 +163,27 @@ class EncryptedVFS(apsw.VFS):
         # so we store the derived keys and the IVs salt
         # to not re-generate them each time the file is opened
         self.files_key = {}
-        self.files_ivs_salt = {}
 
         super().__init__(self.vfsname, self.basevfs)
 
     def xOpen(self, name, flags):
         """Open the file and read the header (store necessary data)."""
-        assert self.files_key.keys() == self.files_ivs_salt.keys()
-
         filename = name if isinstance(name, str) else name.filename()
 
-        if filename not in self.files_key or filename not in self.files_ivs_salt:
+        if filename not in self.files_key:
             with open(filename, "a+b") as file:
-                header = _parse_header(file)
+                password_salt = _parse_header(file)
 
-                if not header:
+                if not password_salt:
                     # init the header of the file
                     password_salt = os.urandom(16)
-                    ivs_salt = os.urandom(16)
 
                     file.seek(0)
                     file.write(password_salt)
-                    file.write(ivs_salt)
-                else:
-                    password_salt, ivs_salt = header
 
             self.files_key[filename] = _derive_password(self.password, password_salt)
-            self.files_ivs_salt[filename] = ivs_salt
 
-        return EncryptedVFSFile(
-            self.files_key[filename],
-            self.files_ivs_salt[filename],
-            self.basevfs,
-            name,
-            flags,
-        )
+        return EncryptedVFSFile(self.files_key[filename], self.basevfs, name, flags)
 
 
 class Connection(apsw.Connection):
@@ -191,7 +194,6 @@ class Connection(apsw.Connection):
 
     def change_password(self, new_password: str):
         new_password_salt = os.urandom(16)
-        new_ivs_salt = os.urandom(16)
         new_key = _derive_password(new_password, new_password_salt)
 
         if not self.filename:
@@ -204,7 +206,6 @@ class Connection(apsw.Connection):
             header = file.read(HEADER_SIZE)
 
             old_password_salt = header[:16]
-            old_ivs_salt = header[16:32]
             old_key = _derive_password(self.password, old_password_salt)
 
             if len(header) != HEADER_SIZE:
@@ -212,15 +213,13 @@ class Connection(apsw.Connection):
                 return
 
             file.seek(0)
-
             file.write(new_password_salt)
-            file.write(new_ivs_salt)
 
             data = file.read(BLOCK_SIZE)
             offset = 0
             while data:
-                data = _decrypt(old_key, _get_iv(offset, old_ivs_salt), data)
-                data = _encrypt(new_key, _get_iv(offset, new_ivs_salt), data)
+                data = _decrypt(old_key, data)
+                data = _encrypt(new_key, data)
 
                 file.seek(-BLOCK_SIZE, 1)
                 file.write(data)
@@ -233,8 +232,8 @@ class Connection(apsw.Connection):
 
 # run tests
 if __name__ == "__main__":
-    os.system("rm _test_sqlcrypt_")
-    conn = Connection("_test_sqlcrypt_", "pass")
+    os.system("rm ./tests/_test_sqlcrypt_")
+    conn = Connection("./tests/_test_sqlcrypt_", "pass")
     cursor = conn.cursor()
 
     with conn:
@@ -269,7 +268,7 @@ if __name__ == "__main__":
 
     # re-open the database
 
-    conn = Connection("_test_sqlcrypt_", "pass")
+    conn = Connection("./tests/_test_sqlcrypt_", "pass")
     cursor = conn.cursor()
 
     cursor.execute(
@@ -304,7 +303,7 @@ if __name__ == "__main__":
 
     conn.close()
 
-    conn = Connection("_test_sqlcrypt_", "azerty")
+    conn = Connection("./tests/_test_sqlcrypt_", "azerty")
     cursor = conn.cursor()
 
     cursor.execute(
@@ -344,8 +343,8 @@ if __name__ == "__main__":
 
     # test with and without key
     # if decrypted version is the same as the "not-encrypted" one
-    os.system("rm _test_sqlcrypt_")
-    conn = Connection("_test_sqlcrypt_", "pass")
+    os.system("rm ./tests/_test_sqlcrypt_")
+    conn = Connection("./tests/_test_sqlcrypt_", "pass")
     cursor = conn.cursor()
 
     with conn:
@@ -371,11 +370,11 @@ if __name__ == "__main__":
 
     conn.close()
 
-    encrytped_database = open("_test_sqlcrypt_", "rb").read()
-    decrypted_database = _decrypt_database("pass", "_test_sqlcrypt_")
-    os.system("rm _test_sqlcrypt_")
+    encrytped_database = open("./tests/_test_sqlcrypt_", "rb").read()
+    decrypted_database = _decrypt_database("pass", "./tests/_test_sqlcrypt_")
+    os.system("rm ./tests/_test_sqlcrypt_")
 
-    conn = apsw.Connection("_test_sqlcrypt_")
+    conn = apsw.Connection("./tests/_test_sqlcrypt_")
     cursor = conn.cursor()
 
     with conn:
@@ -400,8 +399,7 @@ if __name__ == "__main__":
             )
     conn.close()
 
-    plain_database = open("_test_sqlcrypt_", "rb").read()
+    plain_database = open("./tests/_test_sqlcrypt_", "rb").read()
 
-    assert (len(encrytped_database) - len(plain_database) - HEADER_SIZE) < BLOCK_SIZE
     assert decrypted_database.startswith(plain_database)
     assert len(decrypted_database) - len(plain_database) < BLOCK_SIZE
