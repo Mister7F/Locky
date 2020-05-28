@@ -71,21 +71,15 @@ The accounts are stored in a SQLite encrypted database
 
 # Todo
 - UI
-    - account editor
-        - save & close on press enter
+    - save & close on press enter/esc
     - test on mobile (phone & tablet)
-    - create initial wallet
-    - reverse navigation
     - show copy notification in the account editor
-    - theme component with sass variable
     - compute password strength
     - show password strength only on creation
-    - rename `moveFolder` -> `onMoveFolder` to solve conflict with `API.svelte` functions
+    - generate password
 - Backend
     - G-Drive sync
     - `database.py`, optimize `move_account` to drop the column `sequence_tmp`
-    - use only account ID when possible
-    - clean database function
     - close the process when the window is closed
 - Security
     - HMAC database
@@ -95,17 +89,15 @@ The accounts are stored in a SQLite encrypted database
     - Clean the all code
 
 # Ideas
-- Multiple databases
-    - choose the database in the lock screen
 - Sync with Dropbox
-- Check if passwords have been leaked
+- add themes
 - Write notes in markdown
 - Keep an history of all the modification
-- Generate password
 - Shortcut
     - ctrl C
     - ctrl V
     - escape to close form
+    - reverse navigation
 - Store file
 - View old passwords
 - Statistics on the accounts

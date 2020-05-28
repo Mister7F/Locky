@@ -114,6 +114,7 @@
         flex-direction: row;
         justify-content: flex-start;
         align-items: center;
+        cursor: pointer;
     }
     .detail_img {
         min-height: 70px;

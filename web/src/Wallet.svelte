@@ -290,7 +290,7 @@
         </div>
     </Sortablegrid>
     <Fab class="new_account {dragging ? '' : 'visible'}" on:click={newAccount}>
-        <Icon class="material-icons">add</Icon>
+        <Icon class="material-icons" color="secondary">add</Icon>
     </Fab>
 </div>
 

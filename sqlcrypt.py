@@ -13,12 +13,21 @@ HEADER_SIZE = 32
 
 
 @functools.lru_cache(maxsize=2048)
-def _get_iv(offset: int, salt=bytes) -> bytes:
+def _get_iv(offset: int, salt: bytes) -> bytes:
     """Generate an IV for the block."""
     assert salt, "Salt is required"
 
     block_position = offset // BLOCK_SIZE
     return md5(salt + block_position.to_bytes(16, "big")).digest()
+
+
+def _parse_header(file):
+    file.seek(0)
+    header = file.read(HEADER_SIZE)
+    if header:
+        password_salt = header[:16]
+        ivs_salt = header[16:32]
+        return password_salt, ivs_salt
 
 
 def _decrypt(key: bytes, iv: bytes, data: bytes) -> bytearray:
@@ -42,6 +51,26 @@ def _derive_password(password: str, salt: bytes) -> bytes:
     return scrypt(password, salt=salt, key_len=32, N=2 ** 12, r=8, p=1)
 
 
+def _decrypt_database(password: str, filename: str) -> bytes:
+    """For testing purpose only.
+
+    Decrypt the encrypt database. To use for testing purpose, to check that the decrypted
+    database is the same as the not-encrypted one.
+    """
+    with open(filename, "rb") as file:
+        password_salt, ivs_salt = _parse_header(file)
+        key = _derive_password(password, password_salt)
+
+        file.seek(HEADER_SIZE)
+        data = file.read()
+
+        plaindata = b""
+        for i in range(0, len(data), BLOCK_SIZE):
+            plaindata += _decrypt(key, _get_iv(i, ivs_salt), data[i : i + BLOCK_SIZE])
+
+    return plaindata
+
+
 class EncryptedVFSFile(apsw.VFSFile):
     def __init__(self, key: bytes, ivs_salt: bytes, *args):
         """Encrypt the data when writing on the disk and decrypt when reading.
@@ -56,7 +85,7 @@ class EncryptedVFSFile(apsw.VFSFile):
         self.ivs_salt = ivs_salt
         return super().__init__(*args)
 
-    def xRead(self, amount: int, offset: int):
+    def xRead(self, amount: int, offset: int) -> bytes:
         assert amount <= BLOCK_SIZE
 
         start_block_offset = offset - (offset % BLOCK_SIZE)
@@ -85,6 +114,8 @@ class EncryptedVFSFile(apsw.VFSFile):
             self.xWrite(data[:end_data_pos], start_block_offset + BLOCK_SIZE)
             data = data[:end_data_pos]
 
+        assert offset + len(data) <= start_block_offset + BLOCK_SIZE
+
         iv = _get_iv(offset, self.ivs_salt)
 
         # the data doesn't fill into blocks
@@ -101,7 +132,7 @@ class EncryptedVFSFile(apsw.VFSFile):
 
         super().xWrite(blocks_data, start_block_offset + HEADER_SIZE)
 
-    def xFileSize(self):
+    def xFileSize(self) -> int:
         return super().xFileSize() - HEADER_SIZE
 
 
@@ -127,7 +158,7 @@ class EncryptedVFS(apsw.VFS):
 
         if filename not in self.files_key or filename not in self.files_ivs_salt:
             with open(filename, "a+b") as file:
-                header = self._parse_header(file)
+                header = _parse_header(file)
 
                 if not header:
                     # init the header of the file
@@ -150,14 +181,6 @@ class EncryptedVFS(apsw.VFS):
             name,
             flags,
         )
-
-    def _parse_header(self, file):
-        file.seek(0)
-        header = file.read(HEADER_SIZE)
-        if header:
-            password_salt = header[:16]
-            ivs_salt = header[16:32]
-            return password_salt, ivs_salt
 
 
 class Connection(apsw.Connection):
@@ -318,3 +341,67 @@ if __name__ == "__main__":
         """
     )
     assert cursor.fetchall() == [(1,)]
+
+    # test with and without key
+    # if decrypted version is the same as the "not-encrypted" one
+    os.system("rm _test_sqlcrypt_")
+    conn = Connection("_test_sqlcrypt_", "pass")
+    cursor = conn.cursor()
+
+    with conn:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS accounts (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  value INTEGER DEFAULT 0,
+                  name TEXT DEFAULT ''
+                )
+            """
+        )
+
+    with conn:
+        for i in range(200):
+            cursor.execute(
+                """
+                INSERT INTO accounts (value, name)
+                     VALUES (?, ?)
+                """,
+                [i, hex(i) * 9999],
+            )
+
+    conn.close()
+
+    encrytped_database = open("_test_sqlcrypt_", "rb").read()
+    decrypted_database = _decrypt_database("pass", "_test_sqlcrypt_")
+    os.system("rm _test_sqlcrypt_")
+
+    conn = apsw.Connection("_test_sqlcrypt_")
+    cursor = conn.cursor()
+
+    with conn:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS accounts (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  value INTEGER DEFAULT 0,
+                  name TEXT DEFAULT ''
+                )
+            """
+        )
+
+    with conn:
+        for i in range(200):
+            cursor.execute(
+                """
+                INSERT INTO accounts (value, name)
+                     VALUES (?, ?)
+                """,
+                [i, hex(i) * 9999],
+            )
+    conn.close()
+
+    plain_database = open("_test_sqlcrypt_", "rb").read()
+
+    assert (len(encrytped_database) - len(plain_database) - HEADER_SIZE) < BLOCK_SIZE
+    assert decrypted_database.startswith(plain_database)
+    assert len(decrypted_database) - len(plain_database) < BLOCK_SIZE

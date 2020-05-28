@@ -119,8 +119,9 @@
 
 <style>
     .foldersList {
-        width: 350px;
-        min-width: 350px;
+        --folder-width: 350px;
+        width: var(--folder-width);
+        min-width: var(--folder-width);
         transition: 0.3s;
         padding-top: 10px;
         margin-top: -30px;
@@ -156,6 +157,7 @@
         flex-direction: row;
         justify-content: flex-start;
         align-items: center;
+        box-sizing: border-box;
     }
 
     .foldersList :global(.folder_item button) {
@@ -216,7 +218,7 @@
     }
 
     .deleteFolder.visible {
-        left: 110px;
+        left: 150px;
     }
 </style>
 
