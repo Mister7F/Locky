@@ -77,13 +77,15 @@ The accounts are stored in a SQLite encrypted database
     - compute password strength
     - show password strength only on creation
     - generate password
+    - animate account when changing folder
 - Backend
     - G-Drive sync
     - `database.py`, optimize `move_account` to drop the column `sequence_tmp`
     - close the process when the window is closed
 - Security
     - update security test for new route
-    - just store key, no more hash or password
+        - method "setCurrentFoler" ?
+        - wallet & uiWallet ? (the different method (setCurrentFoler, search) apply filter on wallet)
 - Other
     - Build binary
     - Clean the all code

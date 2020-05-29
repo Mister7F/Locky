@@ -175,7 +175,6 @@
 
         {#if databases && !create}
             <Select
-                variant="outlined"
                 enhanced
                 bind:value={username}
                 label="Username"

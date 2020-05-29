@@ -42,6 +42,17 @@
     const dispatch = createEventDispatcher();
 
     export let wallet = [];
+
+    // accounts displayed in the UI
+    // care about the search, the current directory, etc
+    $: uiWallet = wallet.filter((account) => {
+        if (searchText.length) {
+            return account.name.toLowerCase().indexOf(searchText.toLowerCase()) >= 0;
+        }
+        return currentFolderId ? account.folder_id === currentFolderId : true;
+    }
+    );
+
     let folders = null;
 
     let currentFolderId = 0;
@@ -52,6 +63,7 @@
     export let username = "";
 
     let menuVisible = false;
+    let searchText = "";
 
     // folders variable
     let walletWidth;
@@ -60,8 +72,6 @@
 
     let snackbar;
     let snackbarText;
-
-    $: accountsMovable = !!currentFolderId;
 
     $: menuHideTrigger = menuVisible ? "" : closeMenu();
     let folderDomIds = [];
@@ -85,35 +95,21 @@
     }
 
     async function moveAccount(event) {
-        let newIndex = event.detail.to;
+        // index inside the current folder
+        let newIndex = event.detail.destItem.sequence;
         let movedAccount = event.detail.fromItem;
-
-        if (!currentFolderId) {
-            // we are in the "all accounts" folder
-            // we must recompute the new index based on the accounts
-            // in the original directory, not based on all the accounts
-            let firstFolderAccountIndex = wallet.findIndex(
-                (a) => a.folder_id === movedAccount.folder_id
-            );
-            newIndex -= firstFolderAccountIndex;
-        }
 
         let detail = {
             account_id: movedAccount.id,
             new_index: newIndex,
             into_folder: event.detail.intoFolder,
             dest_account_id: event.detail.destItem.id,
+
         };
         if (!(await moveAccountInFolder(detail))) {
             dispatch("lock");
-        }
-    }
-
-    function clickAccount(account) {
-        if (account.folder) {
-            openFolder(account.id);
         } else {
-            editAccount(account);
+            await refreshAccounts(currentFolderId);
         }
     }
 
@@ -151,8 +147,8 @@
         }
     }
 
-    export async function openFolder(folderId) {
-        let accounts = await getAccounts(folderId);
+    export async function refreshAccounts(folderId) {
+        let accounts = await getAccounts();
 
         if (accounts) {
             currentFolderId = folderId;
@@ -168,18 +164,6 @@
         }
     }
 
-    async function onSearchAccount(event) {
-        if (!event.detail || !event.detail.length) {
-            openFolder(currentFolderId);
-            return;
-        }
-
-        let results = await searchAccount(event.detail);
-        if (results) {
-            wallet = results;
-        }
-    }
-
     async function accountAction(event) {
         let actionElement = event.detail.action;
         if (actionElement.id && actionElement.id.startsWith("item_folder_")) {
@@ -190,7 +174,8 @@
                 into_folder: 1,
                 dest_account_id: parseInt(folderId),
             });
-            await openFolder(currentFolderId);
+
+            await refreshAccounts(currentFolderId);
             return;
         }
     }
@@ -254,7 +239,7 @@
 </Sidepanel>
 <Navbar
     on:lock
-    on:search={onSearchAccount}
+    on:search={(event) => searchText = event.detail || ""}
     bind:viewMode
     on:show_folders={() => (foldersVisible = !foldersVisible)}
     bind:floatingFolder
@@ -266,7 +251,8 @@
         bind:visible={foldersVisible}
         on:open_folder={(event) => {
             foldersVisible = false;
-            openFolder(event.detail);
+            currentFolderId = event.detail;
+            document.cookie = "currentFolderId=" + currentFolderId;
         }}
         bind:currentFolderId />
 
@@ -275,16 +261,15 @@
         on:move={moveAccount}
         on:action={accountAction}
         on:move_blocked={() => onNotify('Can not move accounts in this folder')}
-        bind:items={wallet}
+        bind:items={uiWallet}
         let:item
         let:index
         bind:dragging
-        bind:movable={accountsMovable}
         bind:customActions={folderDomIds}>
         <div slot="item">
             <Account
                 account={item}
-                on:click={() => clickAccount(item)}
+                on:click={() => editAccount(item)}
                 bind:viewMode
                 on:notify={onNotify} />
         </div>

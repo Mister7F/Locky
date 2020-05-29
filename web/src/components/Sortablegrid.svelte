@@ -33,7 +33,6 @@
     let draggedIndex = -1;
     let destIndex = -1;
     let action = null;
-    let intoFolder = false;
     let gridElement;
 
     let ghostElement = null;
@@ -139,22 +138,17 @@
         ) {
             let destItem = items[destIndex];
 
-            if (!intoFolder) {
-                let item = items.splice(draggedIndex, 1)[0];
-                items.splice(destIndex, 0, item);
-                ghostElement.parentNode.insertBefore(
-                    draggedElement,
-                    ghostElement
-                );
-            } else {
-                items.splice(draggedIndex, 1);
-            }
+            let item = items.splice(draggedIndex, 1)[0];
+            items.splice(destIndex, 0, item);
+            ghostElement.parentNode.insertBefore(
+                draggedElement,
+                ghostElement
+            );
 
             dispatch("move", {
                 from: draggedIndex,
                 to: destIndex,
                 fromItem: draggedItem,
-                intoFolder: intoFolder,
                 destItem: destItem,
             });
         } else {
@@ -169,8 +163,7 @@
         destIndex = -1;
         dragging = false;
         action = null;
-        intoFolder = false;
-        let previousFolder = gridElement.querySelector(".move_into");
+        let previousFolder = document.querySelector(".move_into");
         if (previousFolder) {
             previousFolder.classList.remove("move_into");
         }
@@ -222,31 +215,24 @@
             let destelement = destItemsFiltered[0];
             destIndex = getElementIndex(destelement);
 
-            intoFolder = parseInt(destelement.getAttribute("folder"));
+            let previousFolder = document.querySelector(".move_into");
+            if (previousFolder) {
+                previousFolder.classList.remove("move_into");
+            }
 
-            if (intoFolder) {
-                destelement.classList.add("move_into");
+            let ghostIndex = getElementIndex(ghostElement);
+            if (ghostIndex < destIndex) {
+                destelement.parentNode.insertBefore(
+                    ghostElement,
+                    destelement.nextSibling
+                );
             } else {
-                let previousFolder = document.querySelector(".move_into");
-                if (previousFolder) {
-                    previousFolder.classList.remove("move_into");
-                }
-
-                let ghostIndex = getElementIndex(ghostElement);
-                if (ghostIndex < destIndex) {
-                    destelement.parentNode.insertBefore(
-                        ghostElement,
-                        destelement.nextSibling
-                    );
-                } else {
-                    destelement.parentNode.insertBefore(
-                        ghostElement,
-                        destelement
-                    );
-                }
+                destelement.parentNode.insertBefore(
+                    ghostElement,
+                    destelement
+                );
             }
         } else {
-            intoFolder = false;
             destIndex = getElementIndex(ghostElement);
             let previousFolder = document.querySelector(".move_into");
             if (previousFolder) {
@@ -326,7 +312,6 @@
         {#each items as item, index (item)}
             <div
                 class="container"
-                folder={item.folder || 0}
                 on:mousedown={mouseDown}
                 on:touchstart={mouseDown}>
                 <slot name="item" class="item" {item} {index} />

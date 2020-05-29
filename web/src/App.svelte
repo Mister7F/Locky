@@ -13,7 +13,7 @@
         locked = false;
         setTimeout(() => {
             // do after the DOM is updated
-            walletElement.openFolder(
+            walletElement.refreshAccounts(
                 parseInt(getCookie("currentFolderId")) || 0
             );
         });

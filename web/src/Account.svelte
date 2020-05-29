@@ -15,6 +15,7 @@
     const dispatch = createEventDispatcher();
     export let account;
     export let viewMode = "detail";
+
 </script>
 
 <style>

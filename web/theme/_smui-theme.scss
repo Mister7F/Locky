@@ -58,6 +58,7 @@ $mdc-select-outlined-hover-border: rgba($mdc-theme-on-primary, .87);
 
 .mdc-select {
     --mdc-theme-primary: var(--secondary);
+    padding-bottom: 50px;
 }
 
 .mdc-select--focused .mdc-select__dropdown-icon {
@@ -94,7 +95,7 @@ $mdc-textarea-border: rgba($mdc-theme-on-primary, .73);
 $mdc-textarea-background: rgba($mdc-theme-surface, 1);
 $mdc-textarea-disabled-border-color: rgba($mdc-theme-on-primary, .26);
 
-input, button, select, textarea {
+input, button, textarea {
     /* Fix svelte-material-ui input
        the border-bottom is not at the right place
     */

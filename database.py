@@ -119,6 +119,7 @@ class Database:
               FROM accounts
              WHERE name LIKE '%' || ? || '%'
                 OR login LIKE '%' || ? || '%'
+          ORDER BY sequence
             """,
             [name, name],
         )
@@ -147,7 +148,7 @@ class Database:
                    fields, folder_id, sequence
               FROM accounts
              WHERE (folder_id = ? OR ? = 0)
-          ORDER BY folder_id DESC, sequence ASC
+          ORDER BY sequence ASC
             """,
             [folder_id, folder_id],
         )
@@ -278,9 +279,10 @@ class Database:
         self.account_count()
 
     def move_account(self, account_id, new_index):
-        """Move an account to the specify position in his parent folder."""
-        current_folder_id = self.get_account(account_id)["folder_id"]
+        """Move an account to the specify position.
 
+        The position `index` is the new position with all the accounts
+        """
         with self.conn:
             # can not update in the first query because SQLite will perform the
             # second SELECT command on the current modified columns
@@ -290,8 +292,7 @@ class Database:
                            WHEN id != ? THEN (
                                 SELECT COUNT(*)
                                   FROM accounts AS a
-                                 WHERE a.folder_id = ?
-                                   AND (
+                                 WHERE (
                                     -- Use the id to sort accounts with the same sequence
                                           (0.00000001 * a.id + a.sequence)
                                         < (0.00000001 * accounts.id + accounts.sequence)
@@ -302,18 +303,17 @@ class Database:
                            ELSE (? - 0.5)
                        END) as new_sequence, id
                   FROM accounts
-                 WHERE folder_id = ?
                 """,
                 [
                     account_id,
-                    current_folder_id,
                     account_id,
                     new_index,
-                    current_folder_id,
                 ],
             )
 
             results = self.cursor.fetchall()
+            results = sorted(results, key=lambda x: x[0])
+            results = [(i, x) for i, (_, x) in enumerate(results)]
 
             self.cursor.executemany(
                 """
@@ -330,11 +330,10 @@ class Database:
             self.cursor.execute(
                 """
                 UPDATE accounts
-                   SET folder_id = ?,
-                       sequence = (SELECT COUNT(*) FROM accounts WHERE folder_id=?)
+                   SET folder_id = ?
                  WHERE id = ?
                 """,
-                [folder_id, folder_id, account_id],
+                [folder_id, account_id],
             )
 
     def check_password_value(self, password: str):
@@ -477,6 +476,7 @@ if __name__ == "__main__":
     account = database.get_account(account["id"])
     assert account["folder_id"] == folder["id"]
     assert account["sequence"] == 5
+    database.cursor.close()
 
     database = Database("new password !", "_test_sqlcrypt_")
     assert account["folder_id"] == folder["id"]

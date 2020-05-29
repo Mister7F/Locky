@@ -13,10 +13,6 @@ BLOCK_HEADER_SIZE = 16 + 32
 BLOCK_SIZE = 4096 + BLOCK_HEADER_SIZE
 
 
-class WrongSignature(Exception):
-    pass
-
-
 def _parse_header(file):
     file.seek(0)
     password_salt = file.read(HEADER_SIZE)
