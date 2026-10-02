@@ -170,8 +170,6 @@
             ) {
                 return
             }
-            let ok = false
-            let inExtension = false
             const newPluginKeyHash = hex(
                 await crypto.subtle.digest(
                     'SHA-256',
