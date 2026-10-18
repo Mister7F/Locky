@@ -14,6 +14,16 @@ function isFieldType(value: unknown): value is FieldType {
     return FIELD_TYPES.some((type) => type === value)
 }
 
+type AccountKey = 'name' | 'login' | 'password' | 'url' | 'totp'
+
+const ACCOUNT_FIELDS: [AccountKey, string, FieldType][] = [
+    ['name', 'Name', 'text'],
+    ['login', 'Login', 'text'],
+    ['password', 'Password', 'password'],
+    ['url', 'URL', 'url'],
+    ['totp', '2FA', 'totp'],
+]
+
 export default class Account {
     private __brand!: 'Account'
     id?: string
@@ -26,6 +36,7 @@ export default class Account {
     totp?: string
     fields: Field[]
     in_trash: boolean
+    history: HistoryEntry[]
 
     constructor(
         id?: string,
@@ -37,7 +48,8 @@ export default class Account {
         icon?: string,
         totp?: string,
         fields?: Field[],
-        in_trash?: boolean
+        in_trash?: boolean,
+        history?: HistoryEntry[]
     ) {
         this.id = id || crypto.randomUUID()
         this.name = name || ''
@@ -49,6 +61,7 @@ export default class Account {
         this.totp = totp || ''
         this.fields = fields || []
         this.in_trash = in_trash === true
+        this.history = history || []
     }
 
     static fromJson(values: any): Account {
@@ -62,7 +75,8 @@ export default class Account {
             values.icon,
             values.totp,
             (values.fields || []).map((f) => Field.fromJson(f)),
-            values.in_trash
+            values.in_trash,
+            (values.history || []).map((h) => HistoryEntry.fromJson(h))
         )
     }
 
@@ -98,6 +112,66 @@ export class Field {
             values.name,
             isFieldType(values.type) ? values.type : 'text',
             values.value
+        )
+    }
+}
+
+export class HistoryEntry {
+    private __brand!: 'HistoryEntry'
+    id: string
+    name: string
+    type: FieldType
+    value: string
+    date: string
+
+    constructor(
+        id?: string,
+        name?: string,
+        type?: FieldType,
+        value?: string,
+        date?: string
+    ) {
+        this.id = id || crypto.randomUUID()
+        this.name = name || ''
+        this.type = type || 'text'
+        this.value = value || ''
+        this.date = date || new Date().toISOString()
+    }
+
+    static fromJson(values: any): HistoryEntry {
+        return new HistoryEntry(
+            values.id,
+            values.name,
+            isFieldType(values.type) ? values.type : 'text',
+            values.value,
+            values.date
+        )
+    }
+
+    /**
+     * Values of `before` that are lost in `after` (changed or removed).
+     */
+    static diff(before: Account, after: Account): HistoryEntry[] {
+        const lost: Field[] = ACCOUNT_FIELDS.filter(
+            ([key]) => before[key] && before[key] !== after[key]
+        ).map(([key, name, type]) => new Field(name, type, before[key]))
+
+        // custom fields can share a name, each new field matches one old field
+        const remaining = [...after.fields]
+        for (const field of before.fields) {
+            const index = remaining.findIndex(
+                (f) => f.name === field.name && f.value === field.value
+            )
+            if (index >= 0) {
+                remaining.splice(index, 1)
+            } else if (field.value) {
+                lost.push(field)
+            }
+        }
+
+        return lost.map(
+            ({ name, type, value }) =>
+                new HistoryEntry(undefined, name, type, value)
         )
     }
 }

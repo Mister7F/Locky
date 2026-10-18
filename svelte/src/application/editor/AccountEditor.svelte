@@ -2,7 +2,7 @@
     import Button from '../../helpers/Button.svelte'
     import IconButton from '../../helpers/IconButton.svelte'
     import Fab from '../../helpers/Fab.svelte'
-    import Account from '../../models/account.ts'
+    import Account, { type HistoryEntry } from '../../models/account.ts'
     import type Folder from '../../models/folder.ts'
 
     import Field from '../../helpers/field/Field.svelte'
@@ -14,16 +14,19 @@
     import DialogRemoveAccount from './DialogRemoveAccount.svelte'
     import GeneratePassword from './GeneratePassword.svelte'
     import SimpleLoginAlias from './SimpleLoginAlias.svelte'
+    import AccountHistory from './AccountHistory.svelte'
     import Selection from '../../helpers/Selection.svelte'
 
     interface Props {
         account: Account
         folders?: Folder[]
+        history?: HistoryEntry[]
         readonly?: boolean
         onclose: () => void
         onremove: () => void
         onrestore: () => void
         onsave: (account: Account) => void
+        onremove_history: (entryId: string) => Promise<void>
     }
 
     let {
@@ -31,8 +34,10 @@
         onclose,
         onremove,
         onrestore,
+        onremove_history,
         account,
         folders = [],
+        history = [],
         readonly = false,
     }: Props = $props()
 
@@ -46,6 +51,7 @@
     let removeAccountDialog = $state<DialogRemoveAccount | undefined>()
     let generatePasswordDialog = $state<GeneratePassword | undefined>()
     let simpleLoginAliasDialog = $state<SimpleLoginAlias | undefined>()
+    let historyDialog = $state<AccountHistory | undefined>()
 
     // TOTP
     let totpCode = $state(null)
@@ -161,6 +167,15 @@
         icon="close"
         onclick={onclose}
     />
+    {#if history.length}
+        <IconButton
+            class="account_editor_history_button"
+            color="on-primary"
+            icon="history"
+            title="History"
+            onclick={() => historyDialog?.open()}
+        />
+    {/if}
     <div class="fields">
         <ImagePicker
             bind:src={accountDraft.icon}
@@ -285,6 +300,12 @@
 
 <SimpleLoginAlias bind:this={simpleLoginAliasDialog} />
 
+<AccountHistory
+    bind:this={historyDialog}
+    entries={history}
+    onremove={onremove_history}
+/>
+
 <style>
     .account {
         padding: 20px;
@@ -333,5 +354,11 @@
         z-index: 99;
         position: absolute;
         right: 16px;
+    }
+
+    :global(.account_editor_history_button) {
+        z-index: 99;
+        position: absolute;
+        left: 16px;
     }
 </style>

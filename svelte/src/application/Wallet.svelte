@@ -85,6 +85,12 @@
     let accountEditorReadonly = $state(false)
     let editedAccountIndex = $state(null)
 
+    let accountHistory = $derived(
+        wallet?.accounts
+            .find((a) => a.id === accountEdited?.id)
+            ?.history.toReversed() || []
+    )
+
     let dragging = $state(false)
     const storedViewMode = window.localStorage.getItem('viewMode')
     let viewMode = $state<AccountViewMode>(
@@ -161,6 +167,9 @@
         }
         accountEdited = undefined
     }
+    async function onRemoveHistoryEntry(entryId: string) {
+        wallet = await api.removeHistoryEntry(accountEdited.id, entryId)
+    }
     async function onAccountAction(event: {
         action: HTMLElement
         item: Account
@@ -190,10 +199,12 @@
         <AccountEditor
             account={accountEdited}
             folders={wallet.folders}
+            history={accountHistory}
             readonly={accountEditorReadonly}
             onsave={onSaveAccount}
             onremove={onRemoveAccount}
             onrestore={onRestoreAccount}
+            onremove_history={onRemoveHistoryEntry}
             onclose={() => (accountEdited = undefined)}
         />
     {/if}

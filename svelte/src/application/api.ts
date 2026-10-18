@@ -1,7 +1,7 @@
 import { savePassword } from '../helpers/web_extension.svelte.ts'
 import Wallet from '../models/wallet.ts'
 import Folder from '../models/folder.ts'
-import Account from '../models/account.ts'
+import Account, { HistoryEntry } from '../models/account.ts'
 import { decryptDatabase, encryptDatabase } from './encrypt.ts'
 import * as indexdb from './indexdb.ts'
 
@@ -202,6 +202,9 @@ export async function updateAccount(
         console.error('Account not found')
         return
     }
+    // the editor works on a copy, its history might be outdated
+    const before = wallet.accounts[toUpdate]
+    account.history = [...before.history, ...HistoryEntry.diff(before, account)]
     wallet.accounts[toUpdate] = account
     return await saveWallet()
 }
@@ -213,6 +216,22 @@ export async function removeAccount(
         return
     }
     wallet.accounts = wallet.accounts.filter((a) => a.id !== accountId)
+    return await saveWallet()
+}
+
+export async function removeHistoryEntry(
+    accountId: string,
+    entryId: string
+): Promise<Wallet | undefined> {
+    if (!wallet) {
+        return
+    }
+    const account = wallet.accounts.find((a) => a.id === accountId)
+    if (!account) {
+        console.error('Account not found')
+        return
+    }
+    account.history = account.history.filter((h) => h.id !== entryId)
     return await saveWallet()
 }
 
