@@ -4,6 +4,9 @@
     import Button from '../../helpers/Button.svelte'
     import Icon from '../../helpers/Icon.svelte'
     import { concatenate, generatePassword } from '../../helpers/crypto.ts'
+    import { EFF_WORD_COUNT, loadEffWords } from '../../helpers/wordlist.ts'
+
+    type PasswordMode = 'characters' | 'words'
 
     interface Props {
         onuse: (password: string) => void
@@ -43,12 +46,17 @@
     let useSymbol = $state(true)
     let useComplexSymbol = $state(false)
 
+    let mode = $state<PasswordMode>('characters')
     let passwordLength = $state(32)
+    let wordCount = $state(10)
     let password = $state('')
+    let generationError = $state('')
     let generatePasswordDialogOpen = $state(false)
-    let entropyBits = $derived(
-        passwordLength * Math.log2(getAlphabet().length || 1)
+    let choiceCount = $derived(
+        mode === 'words' ? EFF_WORD_COUNT : getAlphabet().length
     )
+    let valueCount = $derived(mode === 'words' ? wordCount : passwordLength)
+    let entropyBits = $derived(valueCount * Math.log2(choiceCount || 1))
     let requiredMouseSamples = $derived(Math.ceil(entropyBits))
     let mouseReady = $derived(
         requiredMouseSamples > 0 && mouseSampleCount >= requiredMouseSamples
@@ -57,21 +65,39 @@
     async function regenerate() {
         const currentGeneration = ++generation
         password = ''
+        generationError = ''
         if (!mouseReady) {
             return
         }
-        const additionalEntropy = await mouseEntropy
-        if (currentGeneration !== generation) {
-            return
+        const words = mode === 'words'
+        try {
+            const [additionalEntropy, values] = await Promise.all([
+                mouseEntropy,
+                words ? loadEffWords() : getAlphabet(),
+            ])
+            if (currentGeneration !== generation) {
+                return
+            }
+            const generated = await generatePassword(
+                values,
+                words ? wordCount : passwordLength,
+                additionalEntropy,
+                words ? '-' : ''
+            )
+            if (currentGeneration === generation) {
+                password = generated
+            }
+        } catch (error) {
+            console.error(error)
+            if (currentGeneration === generation) {
+                generationError = 'Unable to generate the password'
+            }
         }
-        const generated = await generatePassword(
-            getAlphabet(),
-            passwordLength,
-            additionalEntropy
-        )
-        if (currentGeneration === generation) {
-            password = generated
-        }
+    }
+
+    function setMode(newMode: PasswordMode) {
+        mode = newMode
+        regenerate()
     }
 
     function collectMouseEntropy(event: PointerEvent) {
@@ -133,71 +159,100 @@
 </script>
 
 <Dialog bind:open={generatePasswordDialogOpen} title="Generate a password">
-    <div class="options">
+    <div class="modes">
         <Button
             color="secondary"
-            onclick={() => {
-                useLower = !useLower
-                regenerate()
-            }}
-            variant={useLower ? 'standard' : 'outlined'}
-            title="Lower case"
+            variant={mode === 'characters' ? 'standard' : 'outlined'}
+            onclick={() => setMode('characters')}
         >
-            a
+            Characters
         </Button>
         <Button
             color="secondary"
-            onclick={() => {
-                useUpper = !useUpper
-                regenerate()
-            }}
-            variant={useUpper ? 'standard' : 'outlined'}
-            title="Upper case"
+            variant={mode === 'words' ? 'standard' : 'outlined'}
+            onclick={() => setMode('words')}
         >
-            A
-        </Button>
-        <Button
-            color="secondary"
-            onclick={() => {
-                useNumber = !useNumber
-                regenerate()
-            }}
-            variant={useNumber ? 'standard' : 'outlined'}
-            title="Digits"
-        >
-            9
-        </Button>
-        <Button
-            color="secondary"
-            onclick={() => {
-                useSymbol = !useSymbol
-                regenerate()
-            }}
-            variant={useSymbol ? 'standard' : 'outlined'}
-            title="Standard symbols"
-        >
-            !
-        </Button>
-        <Button
-            color="secondary"
-            onclick={() => {
-                useComplexSymbol = !useComplexSymbol
-                regenerate()
-            }}
-            variant={useComplexSymbol ? 'standard' : 'outlined'}
-            title="Complex symbols"
-        >
-            £
+            Words
         </Button>
     </div>
+
+    {#if mode === 'characters'}
+        <div class="options">
+            <Button
+                color="secondary"
+                onclick={() => {
+                    useLower = !useLower
+                    regenerate()
+                }}
+                variant={useLower ? 'standard' : 'outlined'}
+                title="Lower case"
+            >
+                a
+            </Button>
+            <Button
+                color="secondary"
+                onclick={() => {
+                    useUpper = !useUpper
+                    regenerate()
+                }}
+                variant={useUpper ? 'standard' : 'outlined'}
+                title="Upper case"
+            >
+                A
+            </Button>
+            <Button
+                color="secondary"
+                onclick={() => {
+                    useNumber = !useNumber
+                    regenerate()
+                }}
+                variant={useNumber ? 'standard' : 'outlined'}
+                title="Digits"
+            >
+                9
+            </Button>
+            <Button
+                color="secondary"
+                onclick={() => {
+                    useSymbol = !useSymbol
+                    regenerate()
+                }}
+                variant={useSymbol ? 'standard' : 'outlined'}
+                title="Standard symbols"
+            >
+                !
+            </Button>
+            <Button
+                color="secondary"
+                onclick={() => {
+                    useComplexSymbol = !useComplexSymbol
+                    regenerate()
+                }}
+                variant={useComplexSymbol ? 'standard' : 'outlined'}
+                title="Complex symbols"
+            >
+                £
+            </Button>
+        </div>
+    {/if}
     <div class="password-length">
-        <Slider
-            min={4}
-            max={64}
-            bind:value={passwordLength}
-            onchange={regenerate}
-        />
-        <span>{passwordLength}</span>
+        {#if mode === 'words'}
+            <Slider
+                min={4}
+                max={24}
+                bind:value={wordCount}
+                onchange={regenerate}
+            />
+            <span>{wordCount} words</span>
+        {:else}
+            <Slider
+                min={4}
+                max={64}
+                bind:value={passwordLength}
+                onchange={regenerate}
+            />
+            <span>{passwordLength} characters</span>
+        {/if}
     </div>
     <div class="entropy-panel" onpointermove={collectMouseEntropy}>
         <Icon>gesture</Icon>
@@ -210,6 +265,9 @@
     <span class:weak={entropyBits < 128}>
         Entropy: {entropyBits.toFixed(1)} bits
     </span>
+    {#if generationError}
+        <span class="error">{generationError}</span>
+    {/if}
     <div class="password">{password}</div>
 
     {#snippet actions()}
@@ -243,6 +301,7 @@
     .password-length span {
         margin-left: 10px;
         color: var(--on-primary);
+        white-space: nowrap;
     }
 
     .entropy-panel {
@@ -267,7 +326,8 @@
         margin: 0;
     }
 
-    .weak {
+    .weak,
+    .error {
         color: var(--error);
     }
 
@@ -291,6 +351,16 @@
         gap: 10px;
         justify-content: space-between;
         flex-direction: row;
+    }
+
+    .modes {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .modes :global(button) {
+        flex: 1;
     }
 
     .options :global(i) {

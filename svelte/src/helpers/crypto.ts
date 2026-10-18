@@ -130,12 +130,13 @@ export function concatenate(...arrays: Uint8Array[]): Uint8Array {
  * Generate a password from browser randomness mixed with additional entropy.
  */
 export async function generatePassword(
-    alphabet: string,
+    values: Iterable<string>,
     length: number,
-    additionalEntropy: Uint8Array
+    additionalEntropy: Uint8Array,
+    separator = ''
 ): Promise<string> {
-    const characters = [...new Set(alphabet)]
-    if (!characters.length || !length) {
+    const choices = [...new Set(values)]
+    if (!choices.length || !length) {
         return ''
     }
 
@@ -149,7 +150,7 @@ export async function generatePassword(
 
     const password: string[] = []
     let counter = 0
-    const limit = 2 ** 32 - (2 ** 32 % characters.length)
+    const limit = 2 ** 32 - (2 ** 32 % choices.length)
     while (password.length < length) {
         const random = window.crypto.getRandomValues(new Uint8Array(64))
         const counterBytes = new Uint8Array(4)
@@ -160,16 +161,22 @@ export async function generatePassword(
             concatenate(domain, counterBytes),
             'SHA-512'
         )
-        for (const pos of new Uint32Array(block)) {
+        const blockView = new DataView(
+            block.buffer,
+            block.byteOffset,
+            block.byteLength
+        )
+        for (let offset = 0; offset < block.byteLength; offset += 4) {
+            const pos = blockView.getUint32(offset)
             if (pos < limit) {
-                password.push(characters[pos % characters.length])
+                password.push(choices[pos % choices.length])
                 if (password.length === length) {
                     break
                 }
             }
         }
     }
-    return password.join('')
+    return password.join(separator)
 }
 
 // 32 bits representation of the given string

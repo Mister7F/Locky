@@ -20,6 +20,7 @@ const preCache = async () => {
     urlsToCache.push(indexPath + '/img/accounts/files.txt')
     urlsToCache.push(indexPath + '/img/accounts/default.svg')
     urlsToCache.push(indexPath + '/img/noimage.svg')
+    urlsToCache.push(indexPath + '/wordlists/eff_large_wordlist.txt')
 
     // "addAll" fail if only 1 of the request fail
     // we want to store as much as possible in
@@ -85,6 +86,11 @@ self.addEventListener('fetch', async (event) => {
         ]
         if (urlPath === indexPath + '/img/accounts/files.txt') {
             strategy = 'network-first'
+        } else if (
+            urlPath ===
+            indexPath + '/wordlists/eff_large_wordlist.txt'
+        ) {
+            strategy = 'cache-first'
         } else if (cachableExtension.indexOf(fileExtension) >= 0) {
             strategy = 'cache-first'
         } else if (
