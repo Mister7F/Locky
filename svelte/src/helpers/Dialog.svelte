@@ -17,17 +17,32 @@
         actions,
     }: Props = $props()
 
+    let dialogElement = $state<HTMLElement>()
+
     function onClose(event: MouseEvent) {
         const target = event.target as HTMLElement
         if (dismissible && target?.classList.contains('background')) {
             open = false
         }
     }
+
+    function onKeyDown(event: KeyboardEvent) {
+        if (
+            event.key === 'Escape' &&
+            open &&
+            dismissible &&
+            !dialogElement?.querySelector('.dialog')
+        ) {
+            open = false
+        }
+    }
 </script>
+
+<svelte:window onkeydown={onKeyDown} />
 
 {#if open}
     <div class="background" onclick={onClose}>
-        <div class="dialog">
+        <div class="dialog" bind:this={dialogElement}>
             <div class="header">
                 <span class="title">{title}</span>
                 {#if headerActions}
