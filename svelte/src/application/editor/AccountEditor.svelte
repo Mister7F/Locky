@@ -103,6 +103,14 @@
         accountDraft.fields = accountDraft.fields
     }
 
+    function moveField(fromIndex: number, toIndex: number) {
+        accountDraft.fields.splice(
+            toIndex,
+            0,
+            ...accountDraft.fields.splice(fromIndex, 1)
+        )
+    }
+
     function onEdit(accountEdited?: Account) {
         readonly = false
         totpCode = null
@@ -231,7 +239,7 @@
             oncopy={async () => copyValue(getTotpCode(accountDraft.totp))}
         />
 
-        {#each accountDraft.fields as field, i}
+        {#each accountDraft.fields as field, i (field)}
             <Field
                 bind:label={field.name}
                 bind:value={field.value}
@@ -240,6 +248,10 @@
                 index={i}
                 canEditType={true}
                 onremove={() => removeField(i)}
+                onmove_up={i > 0 ? () => moveField(i, i - 1) : undefined}
+                onmove_down={i < accountDraft.fields.length - 1
+                    ? () => moveField(i, i + 1)
+                    : undefined}
                 oncopy={() => copyValue(field.value)}
                 showGeneratePassword={true}
                 actionIcon={field.type === 'email' && !field.value

@@ -10,12 +10,16 @@
         type?: FieldType
         label?: string
         onremove?: () => void
+        onmove_up?: () => void
+        onmove_down?: () => void
     }
 
     let {
         type = $bindable('text'),
         label = $bindable(''),
         onremove,
+        onmove_up,
+        onmove_down,
     }: Props = $props()
 
     let fieldNameDialogOpen = $state(false)
@@ -44,6 +48,25 @@
 />
 
 <Dialog bind:open={fieldNameDialogOpen} title="Edit Field">
+    {#snippet headerActions()}
+        <Button
+            icon="arrow_upward"
+            color="secondary"
+            variant="text"
+            disabled={!onmove_up}
+            onclick={onmove_up}
+            title="Move up"
+        />
+        <Button
+            icon="arrow_downward"
+            color="secondary"
+            variant="text"
+            disabled={!onmove_down}
+            onclick={onmove_down}
+            title="Move down"
+        />
+    {/snippet}
+
     Change type
     <br />
     <div class="field_types">

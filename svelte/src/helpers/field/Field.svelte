@@ -33,6 +33,8 @@
         oncopy?: () => void
         onshow_qrcode?: () => void
         onremove?: (index?: number) => void
+        onmove_up?: () => void
+        onmove_down?: () => void
         actionIcon?: string
         actionTitle?: string
         onaction?: () => void
@@ -61,6 +63,8 @@
         oncopy,
         onshow_qrcode,
         onremove,
+        onmove_up,
+        onmove_down,
         actionIcon = '',
         actionTitle = '',
         onaction,
@@ -218,7 +222,13 @@
                     <IconButton onclick={onshow_qrcode} icon="qr_code" />
                 {/if}
                 {#if canEditType && !readonly}
-                    <FieldAction bind:type bind:label {onremove} />
+                    <FieldAction
+                        bind:type
+                        bind:label
+                        {onremove}
+                        {onmove_up}
+                        {onmove_down}
+                    />
                 {/if}
                 {#if actionIcon && !readonly}
                     <IconButton

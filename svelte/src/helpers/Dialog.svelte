@@ -4,6 +4,7 @@
         open?: boolean
         dismissible?: boolean
         children?: () => any
+        headerActions?: () => any
         actions?: () => any
     }
 
@@ -12,6 +13,7 @@
         open = $bindable(false),
         dismissible = true,
         children,
+        headerActions,
         actions,
     }: Props = $props()
 
@@ -26,7 +28,12 @@
 {#if open}
     <div class="background" onclick={onClose}>
         <div class="dialog">
-            <span class="title">{title}</span>
+            <div class="header">
+                <span class="title">{title}</span>
+                {#if headerActions}
+                    {@render headerActions()}
+                {/if}
+            </div>
             <hr />
             <div class="content">
                 {#if children}
@@ -57,7 +64,14 @@
         z-index: 99999;
     }
 
+    .header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
     .title {
+        flex: 1;
         font-size: 1.25rem;
         font-weight: 500;
         letter-spacing: 0.0125em;
